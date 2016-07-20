@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Password Manager</title>
-    <link rel="stylesheet" href="main.css?v=a72039">
+    <link rel="stylesheet" href="main.css?v=0b1458">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
@@ -21,39 +21,24 @@
             </div>
         </header>
 
-        <vault-editor :vault="currentVault"></vault-editor>
-
-        <script type="text/html" id="vault-editor-template">
-            <!-- <p>Hi, you have not set the master password yet. Please set one.</p>
-            <p>Please not that this password is only for you, it cannot be recovered by us, nor anyone else.</p> -->
-            
-            <form @submit.prevent="save">
-                <label>
-                    Vault name
-                    <input type="text" v-model="name">
-                </label>
-
-                <label>
-                    Master password
-                    <input type="password" v-model="password">
-                </label>
-                <label>
-                    Repeat master password
-                    <input type="password" v-model="passwordConfirm">
-                </label>
-                <label>
-                    <input type="checkbox" v-model="passwordVisible"> Show password
-                </label>
-
-                <button type="submit">Set master password</button>
-            </form>
-        </script>
-
-
         <div class="container">
             <!-- <header class="hero-header">
                 <h1>Password Manager</h1>
             </header> -->
+
+            <vault-editor :vault="currentVault"></vault-editor>
+
+            <form>
+                <label>
+                    <input type="checkbox" checked>
+                    Auto lock after
+                    <input type="text">
+                    minutes of inactivity
+                </label>
+            </form>
+
+            <button>Lock this vault</button>
+            <button>Lock all vaults</button>
 
             <div>
                 <h2>Add secret</h2>
@@ -130,7 +115,33 @@
         </ul>
     </script>
 
+    <script type="text/html" id="vault-editor-template">
+        <!-- <p>Hi, you have not set the master password yet. Please set one.</p>
+        <p>Please not that this password is only for you, it cannot be recovered by us, nor anyone else.</p> -->
+
+        <form @submit.prevent="save">
+            <label>
+                Vault name
+                <input type="text" v-model="name">
+            </label>
+
+            <label>
+                Master password
+                <input type="password" v-model="password">
+            </label>
+            <label>
+                Repeat master password
+                <input type="password" v-model="passwordConfirm">
+            </label>
+            <label>
+                <input type="checkbox" v-model="passwordVisible"> Show password
+            </label>
+
+            <button type="submit">Set master password</button>
+        </form>
+    </script>
+
     <script src="https://www.gstatic.com/firebasejs/3.1.0/firebase.js" defer></script>
-    <script src="/main.js?v=e470a0" defer></script>
+    <script src="/main.js?v=78b7d8" defer></script>
 </body>
 </html>

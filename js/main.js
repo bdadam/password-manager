@@ -14,7 +14,7 @@ import Vault from './vault.js';
 
 localforage.config({
     name        : 'brick-password-manager',
-    version     : 0.1
+    version     : 3
 });
 
 const PASS = '123456';
@@ -151,3 +151,43 @@ rf.once('value', snap => {
 firebase.auth().onAuthStateChanged(model.setUser);
 // firebase.auth().onAuthStateChanged(user => (user && console.log(user.uid)) || 'null user');
 // firebase.auth().onAuthStateChanged(x => console.log('auth state changed', x));
+
+
+// const vaults = [
+//     {
+//         title: 'title',
+//         iv: 'abc123',
+//         salt: 'salt',
+//         secrets: [
+//             'sdfsdfsdf',
+//             'wer23332efsd',
+//             '...'
+//         ]
+//     }
+// ];
+
+
+
+const sjcl = require('sjcl');
+
+var saltBits = sjcl.random.randomWords(8);
+var derivedKey = sjcl.misc.pbkdf2("password", saltBits, 1000, 256);
+var key = sjcl.codec.base64.fromBits(derivedKey);
+
+var rp = {};
+// sjcl.encrypt(key, 'text', { iv: sjcl.random.randomWords(8) }, rp)
+const res = sjcl.encrypt('password', 'text', { ks: 256, mode: 'gcm' });
+console.log(1, res);
+
+const res2 = sjcl.decrypt('password', res);
+console.log(2, res2);
+
+// console.time('asdf');
+// for (var i = 0; i < 10; i++) {
+//     var saltBits = sjcl.random.randomWords(8);
+//     var derivedKey = sjcl.misc.pbkdf2("password", saltBits, 1000, 256);
+//     var key = sjcl.codec.base64.fromBits(derivedKey);
+//     sjcl.encrypt('skldifjuisoufo8s78f8s7f897s98', 'fsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsdfsifopsipfs89f89s08fsfjsjfklsjflks89fs89df678sd6fysudifsdjfsd', { ks: 256, mode: 'gcm' });
+// }
+//
+// console.timeEnd('asdf');
