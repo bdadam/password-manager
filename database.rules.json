@@ -11,6 +11,12 @@
                 ".read": "$uid === auth.uid",
                 ".write": "$uid === auth.uid"
             }
+        },
+        "user-vaults": {
+            "$uid": {
+                ".read": "$uid === auth.uid",
+                ".write": "$uid === auth.uid"
+            }
         }
     }
 }
