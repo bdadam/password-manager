@@ -1,0 +1,29 @@
+<button @click="lock">Lock this vault</button>
+
+<h2>{{ vault.name }} - {{ vault.id }}</h2>
+
+<form @submit.prevent="initialize">
+    <p>This vault is not set up yet. Please provide a password.</p>
+    <input type="password" v-model="password">
+    <button type="submit">Create this vault</button>
+</form>
+
+<form @submit.prevent="open">
+    <p>This vault is locked. Please provide your password to unlock it.</p>
+    <input type="password" v-model="password">
+    <button type="submit">Open this vault</button>
+</form>
+
+
+<ul v-if="decryptedSecrets">
+    <li v-for="secret in decryptedSecrets">
+        {{ secret.username }}
+        <button @click="copyToClipboard(secret)">Copy to clipboard</button>
+        <button @click="reveal(secret)">Show password</button>
+        <button @click="edit(secret)">Edit</button>
+        <button @click="remove(secret)">Remove</button>
+    </li>
+    <li>
+        <button @click="add">Add</button>
+    </li>
+</ul>

@@ -5,25 +5,65 @@ const Vue = require('vue');
 // const firebase = require('firebase');
 const firebase = window.firebase;
 const localforage = require('localforage');
-// const page = require('page');
+const page = require('page');
 // const PubSub = require('./pubsub');
 
 import { encrypt, decrypt } from './crypto.js';
 import Vault from './vault.js';
 
 
-localforage.config({
-    name        : 'brick-password-manager',
-    version     : 3
-});
+localforage.config({ name: 'brick-password-manager' });
+
+import store from './store';
+
+// localforage.clear();
+
 
 const PASS = '123456';
 const SALT = 'salt';
 
 Vue.component('header-login', {
     replace: false,
-    template: document.querySelector('#header-login-template').innerHTML,
+    template: require('../templates/header-login.html'),
     props: ['name', 'avatar', 'email']
+});
+
+Vue.component('vault-view', {
+    replace: false,
+    template: require('../templates/vault-view.html'),
+    props: ['vaultid'],
+
+    data: () => ({ vault: null, password: '', decryptedSecrets: [] }),
+
+    methods: {
+        initialize() {},
+        add() { console.log('add'); },
+        remove() { console.log('remove'); },
+        reveal() {},
+        edit() {},
+        copyToClipboard() {},
+
+        lock() {},
+        unlock() {}
+    },
+
+    computed: {
+        vault() {
+            const state = store.getState();
+            const f = state.vaults.filter(v => v.id === this.vaultid);
+            return f[0];
+        },
+
+        decryptedSecrets() {
+            return [
+                { username: 'user1', password: 'password1', description: 'description' },
+                { username: 'user2', password: 'password2', description: 'description' },
+                { username: 'user3', password: 'password3', description: 'description' },
+                { username: 'user4', password: 'password4', description: 'description' },
+                { username: 'user5', password: 'password5', description: 'description' }
+            ]
+        }
+    }
 });
 
 Vue.component('vault-editor', {
@@ -38,26 +78,17 @@ Vue.component('vault-editor', {
     }
 });
 
-const makeUser = function({ uid, photoURL, displayName }) {
-    return {
-        uid,
-        photoURL,
-        displayName
-    };
-}
+// const store = require('./store');
 
 const model = new Vue({
     el: '#app-root',
 
     data: {
         user: null,
-        currentVault: { id: 0 }
+        vaults: []
     },
 
     init() {
-        localforage.getItem('user').then(user => {
-            this.setUser(user);
-        });
     },
 
     ready: () => {
@@ -69,22 +100,13 @@ const model = new Vue({
             return this.user && this.user.uid;
         },
 
-
+        currentVault() {
+            return this.vaults[0] || { title: 'default' };
+        }
     },
 
     methods: {
-        setUser(user) {
-            this.user = user && makeUser(user);
-
-            localforage.setItem('user', this.user);
-
-            if (user) {
-                const dbref = firebase.database().ref(`users/${this.user.uid}/salt`);
-                dbref.set(SALT);
-            }
-        },
-
-        loginWithGitHub: () => {
+        loginWithGitHub() {
             var p = new firebase.auth.GithubAuthProvider();
             p.addScope('user');
             firebase.auth().signInWithRedirect(p);
@@ -130,6 +152,23 @@ const model = new Vue({
     }
 });
 
+page('/', (ctx, next) => {
+    console.log(ctx);
+});
+
+page('/vaults/:id', (ctx, next) => {
+    console.log(ctx);
+});
+
+page({});
+
+store.subscribe(() => {
+    const state = store.getState();
+    model.user = state.user;
+    model.vaults = state.vaults;
+});
+
+
 firebase.initializeApp({
     apiKey: "AIzaSyAvdrVPo0WJMIA1qkMVz4_Ul_vDDPmJCGc",
     authDomain: "passwords-b6edd.firebaseapp.com",
@@ -142,13 +181,16 @@ firebase.initializeApp({
 // });
 
 
+//
+// const rf = firebase.database().ref('user-passwords/STxWl9QwIwWIwVpm9Z1fDmmdtju1');
+// rf.once('value', snap => {
+//     console.log(snap.val());
+// });
 
-const rf = firebase.database().ref('user-passwords/STxWl9QwIwWIwVpm9Z1fDmmdtju1');
-rf.once('value', snap => {
-    console.log(snap.val());
+// firebase.auth().onAuthStateChanged(model.setUser);
+firebase.auth().onAuthStateChanged(user => {
+    store.dispatch({ type: 'auth-state-changed', user });
 });
-
-firebase.auth().onAuthStateChanged(model.setUser);
 // firebase.auth().onAuthStateChanged(user => (user && console.log(user.uid)) || 'null user');
 // firebase.auth().onAuthStateChanged(x => console.log('auth state changed', x));
 
@@ -167,20 +209,26 @@ firebase.auth().onAuthStateChanged(model.setUser);
 // ];
 
 
-
-const sjcl = require('sjcl');
-
-var saltBits = sjcl.random.randomWords(8);
-var derivedKey = sjcl.misc.pbkdf2("password", saltBits, 1000, 256);
-var key = sjcl.codec.base64.fromBits(derivedKey);
-
-var rp = {};
-// sjcl.encrypt(key, 'text', { iv: sjcl.random.randomWords(8) }, rp)
-const res = sjcl.encrypt('password', 'text', { ks: 256, mode: 'gcm' });
-console.log(1, res);
-
-const res2 = sjcl.decrypt('password', res);
-console.log(2, res2);
+//
+// const sjcl = require('sjcl');
+//
+// var saltBits = sjcl.random.randomWords(8);
+// var derivedKey = sjcl.misc.pbkdf2("password", saltBits, 1000, 256);
+// var key = sjcl.codec.base64.fromBits(derivedKey);
+//
+// var rp = {};
+// // sjcl.encrypt(key, 'text', { iv: sjcl.random.randomWords(8) }, rp)
+// const res = sjcl.encrypt('password', 'text', { ks: 256, mode: 'gcm', adata: 'qwe' });
+// console.log(1, res, typeof(res));
+//
+// const res1 = JSON.parse(res);
+// console.log(1.5, res1);
+//
+// // res1.adata = 'wqweqwe';
+//
+// // const res2 = sjcl.decrypt('password', res);
+// const res2 = sjcl.decrypt('password', JSON.stringify(res1));
+// console.log(2, res2);
 
 // console.time('asdf');
 // for (var i = 0; i < 10; i++) {

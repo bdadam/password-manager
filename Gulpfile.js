@@ -36,6 +36,7 @@ gulp.task('sass:watch', ['sass'], () => {
 
 gulp.task('js:watch', ['js'], () => {
     gulp.watch('js/**/*.js', ['js']);
+    gulp.watch('templates/**/*.html', ['js']);
 });
 
 gulp.task('html:watch', ['html'], () => {
@@ -48,29 +49,40 @@ gulp.task('html:watch', ['html'], () => {
 });
 
 gulp.task('dev', ['sass:watch', 'js:watch', 'html:watch'], () => {
+
+    const webpackDevMiddleware = require('webpack-dev-middleware');
+    const webpack = require('webpack');
+    const webpackBundler = webpack(webpackConfig);
+
+    // webpackBundler.plugin('done', function (stats) {
+    //     if (stats.hasErrors() || stats.hasWarnings()) {
+    //         return browserSync.sockets.emit('fullscreen:message', {
+    //             title: "Webpack Error:",
+    //             body:  stripAnsi(stats.toString()),
+    //             timeout: 100000
+    //         });
+    //     }
+    //     browserSync.reload();
+    // });
+
     browserSync.init({
         files: './public/*',
         open: false,
         server: {
             baseDir: './public',
             port: 3000,
-            middleware: function(req, res, next) {
-                // if (!req.url.includes('browser-sync-client') && !req.url.includes('.css') && !req.url.includes('.js')) {
+            middleware: [function(req, res, next) {
                 if (!/(\.js|\.css|\.jpg|browser-sync-client)/.test(req.url)) {
                     req.url = '/';
                 }
 
                 return next();
-                // var url = require('url');
-                // var fs = require('fs');
-                // var fileName = url.parse(req.url);
-                // fileName = fileName.href.split(fileName.search).join("");
-                // var fileExists = fs.existsSync(folder + fileName);
-                // if (!fileExists && fileName.indexOf("browser-sync-client") < 0) {
-                //     req.url = "/";
-                // }
-                // return next();
-            }
+            },
+            // webpackDevMiddleware(webpackBundler, {
+            //     publicPath: webpackConfig.output.publicPath,
+            //     stats: { colors: false }
+            // })
+        ]
         }
     });
 

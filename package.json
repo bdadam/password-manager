@@ -21,6 +21,7 @@
     "asmcrypto.js": "0.0.11",
     "babel-core": "^6.10.4",
     "babel-loader": "^6.2.4",
+    "babel-plugin-transform-object-assign": "^6.8.0",
     "babel-preset-es2015": "^6.9.0",
     "browser-sync": "^2.13.0",
     "cash-dom": "^1.3.4",
@@ -32,11 +33,17 @@
     "gulp-rev-replace": "^0.4.3",
     "gulp-sass": "^2.3.2",
     "gulp-smoosher": "0.0.9",
+    "html-minify-loader": "^1.1.0",
     "localforage": "^1.4.2",
     "page": "^1.7.1",
+    "pug": "^0.1.0",
+    "pug-html-loader": "^1.0.8",
+    "raw-loader": "^0.5.1",
+    "redux": "^3.5.2",
     "sjcl": "^1.0.3",
     "vue": "^1.0.26",
     "webpack": "^1.13.1",
+    "webpack-dev-middleware": "^1.6.1",
     "webpack-stream": "^3.2.0"
   }
 }

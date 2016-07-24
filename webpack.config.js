@@ -16,9 +16,10 @@ module.exports = {
 	},
 	module: {
 		loaders: [
-			{ test: /\.js$/, exclude: /(node_modules|bower_components)/, loader: 'babel', query: { presets: ['es2015'] }, cacheDirectory: true },
+			{ test: /\.js$/, exclude: /node_modules/, loader: 'babel', query: { presets: ['es2015'] }, plugins: ['transform-object-assign'], cacheDirectory: true },
+			// { test: /\.pug$/, exclude: /node_modules/, loader: 'pug-html-loader' },
 			// { test: /\.html$/, exclude: /(node_modules|bower_components)/, loader: 'html', query: { } },
-			// { test: /\.html$/, exclude: /(node_modules|bower_components)/, loader: 'raw!html-minify' }
+			{ test: /\.html$/, exclude: /(node_modules|bower_components)/, loader: 'raw!html-minify' }
 		]
 	},
 	plugins: [

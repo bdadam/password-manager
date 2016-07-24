@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Password Manager</title>
-    <link rel="stylesheet" href="main.css?v=##css_hash##">
+    <link rel="stylesheet" href="/main.css?v=##css_hash##">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
@@ -17,7 +17,7 @@
                 <header-login v-if="isUserLoggedIn" :avatar="user.photoURL" :name="user.displayName" :email="user.email"></header-login>
                 <button v-if="isUserLoggedIn" @click="logout">Logout</button>
                 <button v-if="!isUserLoggedIn" @click="loginWithGitHub">Login with GitHub</button>
-                    <!-- <button v-on:click="login('google')">Login with Google</button> -->
+                <!-- <button v-on:click="login('google')">Login with Google</button> -->
             </div>
         </header>
 
@@ -26,19 +26,27 @@
                 <h1>Password Manager</h1>
             </header> -->
 
-            <vault-editor :vault="currentVault"></vault-editor>
+            <button>Lock all vaults</button>
 
-            <form>
+            <ul class="tabs" v-if="vaults.length">
+                <li v-for="vault in vaults" class="tab"><a href="/vaults/{{ vault.id }}">{{ vault.name }}</a></li>
+            </ul>
+
+            <div v-for="vault in vaults">
+                <vault-view :vaultid="vault.id"></vault-view>
+            </div>
+
+            <!-- <vault-editor :vault="currentVault"></vault-editor> -->
+
+            <!-- <form>
                 <label>
                     <input type="checkbox" checked>
                     Auto lock after
                     <input type="text">
                     minutes of inactivity
                 </label>
-            </form>
+            </form> -->
 
-            <button>Lock this vault</button>
-            <button>Lock all vaults</button>
 
             <div>
                 <h2>Add secret</h2>
@@ -88,11 +96,6 @@
         </footer>
     </div>
 
-    <script type="text/html" id="header-login-template">
-        <span style="vertical-align: middle;">{{ name }}</span>
-        <span style="vertical-align: middle;">{{ email }}</span>
-        <img :src="avatar" style="max-height: 48px; border-radius: 100%; vertical-align: middle;">
-    </script>
 
     <script type="text/html" id="secret-list-template">
         <form>
