@@ -25,9 +25,11 @@ const uuid = () => {
 }
 
 const defaultState = {
-    user: {},
+    user: null,
     vaults: [
-        { id: uuid(), name: 'Default Vault', secrets: ['jsdkfjsdklf', 'sdfiusoifusfisud'] }
+        { id: uuid(), name: 'Default Vault', hasPassword: false, secrets: [] },
+        { id: uuid(), name: 'Personal secrets', hasPassword: false, secrets: [] },
+        { id: uuid(), name: 'Company secrets', hasPassword: false, secrets: [] }
     ]
 };
 

@@ -14,9 +14,9 @@
                 <a href="/">About</a>
                 <button @click="sync">Sync</button>
 
-                <header-login v-if="isUserLoggedIn" :avatar="user.photoURL" :name="user.displayName" :email="user.email"></header-login>
-                <button v-if="isUserLoggedIn" @click="logout">Logout</button>
-                <button v-if="!isUserLoggedIn" @click="loginWithGitHub">Login with GitHub</button>
+                <header-login :store="store"></header-login>
+                <!-- <button v-if="isUserLoggedIn" @click="logout">Logout</button>
+                <button v-if="!isUserLoggedIn" @click="loginWithGitHub">Login with GitHub</button> -->
                 <!-- <button v-on:click="login('google')">Login with Google</button> -->
             </div>
         </header>
@@ -26,17 +26,17 @@
                 <h1>Password Manager</h1>
             </header> -->
 
-            <button>Lock all vaults</button>
+            <!-- <button>Lock all vaults</button> -->
 
-            <ul class="tabs" v-if="vaults.length">
+            <ul class="vault-tabs" v-if="vaults.length">
                 <li v-for="vault in vaults" class="tab"><a href="/vaults/{{ vault.id }}">{{ vault.name }}</a></li>
+                <li><a href="/vaults/new">+ new vault</a></li>
+                <li style="float: right;"><a href="/vaults/settings">Settings</a></li>
             </ul>
 
             <div v-for="vault in vaults">
                 <vault-view :vaultid="vault.id"></vault-view>
             </div>
-
-            <!-- <vault-editor :vault="currentVault"></vault-editor> -->
 
             <!-- <form>
                 <label>
@@ -47,46 +47,6 @@
                 </label>
             </form> -->
 
-
-            <div>
-                <h2>Add secret</h2>
-                <form @submit.prevent="createSecret">
-                    <label for="new-secret-title">Title</label>
-                    <input type="text" id="new-secret-title">
-
-                    <label for="new-secret-username">Username</label>
-                    <input type="text" id="new-secret-username">
-
-                    <label for="new-secret-value">Password</label>
-                    <input type="passowrd" id="new-secret-value">
-                    <button>Generate password</button>
-
-                    <button type="submit">Create secret</button>
-                </form>
-            </div>
-
-            <button>Lock screen</button>
-
-            <section id="secrets-list"></section>
-
-            <table style="width: 100%;">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Username</th>
-                        <th>Password</th>
-                        <th>Tags</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td>Test</td><td>Test</td><td>Test</td><td>asdf, qwe, blah, blipp, blupp</td><td><button>Copy to clipboard</button> <button>Edit</button> <button>Delete</button></td></tr>
-                    <tr><td>Test</td><td>Test</td><td>Test</td><td>asdf, qwe, blah, blipp, blupp</td><td><button>Copy to clipboard</button> <button>Edit</button> <button>Delete</button></td></tr>
-                    <tr><td>Test</td><td>Test</td><td>Test</td><td>asdf, qwe, blah, blipp, blupp</td><td><button>Copy to clipboard</button> <button>Edit</button> <button>Delete</button></td></tr>
-                    <tr><td>Test</td><td>Test</td><td>Test</td><td>asdf, qwe, blah, blipp, blupp</td><td><button>Copy to clipboard</button> <button>Edit</button> <button>Delete</button></td></tr>
-                </tbody>
-            </table>
-
         </div>
 
         <footer class="site-footer">
@@ -95,54 +55,6 @@
             Website provided as-is, no warranty. This is just an experiment.
         </footer>
     </div>
-
-
-    <script type="text/html" id="secret-list-template">
-        <form>
-            <input type="text" v-model="filter">
-            <button type="submit">Search</button>
-        </form>
-        <ul>
-            <li v-for="secret in secrets">
-                {{ secret.title }}
-                {{ secret.username }}
-                {{ secret.password }}
-                {{ secret.attachments }}
-
-                <button @click="showHidePassword">Show/Hide PW</button>
-                <button @click="copy">copy to clipboard</button>
-                <button @click="edit">Edit</button>
-                <button @click="delete">Delete</button>
-
-            </li>
-        </ul>
-    </script>
-
-    <script type="text/html" id="vault-editor-template">
-        <!-- <p>Hi, you have not set the master password yet. Please set one.</p>
-        <p>Please not that this password is only for you, it cannot be recovered by us, nor anyone else.</p> -->
-
-        <form @submit.prevent="save">
-            <label>
-                Vault name
-                <input type="text" v-model="name">
-            </label>
-
-            <label>
-                Master password
-                <input type="password" v-model="password">
-            </label>
-            <label>
-                Repeat master password
-                <input type="password" v-model="passwordConfirm">
-            </label>
-            <label>
-                <input type="checkbox" v-model="passwordVisible"> Show password
-            </label>
-
-            <button type="submit">Set master password</button>
-        </form>
-    </script>
 
     <script src="https://www.gstatic.com/firebasejs/3.1.0/firebase.js" defer></script>
     <script src="/main.js?v=##js_hash##" defer></script>

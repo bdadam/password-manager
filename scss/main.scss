@@ -89,3 +89,41 @@ body {
   line-height: 80px;
   text-align: center;
 }
+
+// @import '~sass-material-colors/sass/_sass-material-colors';
+@import 'sass-material-colors';
+
+.vault-tabs {
+  font-size: 0;
+  margin: 16px 0;
+  border-bottom: 1px solid #999;
+  overflow: hidden;
+
+  li {
+    display: inline-block;
+    margin-bottom: -1px;
+    // border: 1px solid #999;
+
+    &:first-child {
+    // &:nth-child(2) {
+      border-bottom: 2px solid #9C27B0;
+      // color: 2px solid #9C27B0;
+
+      // color: material-color('cyan', '400');
+      // color: material-color('blue', '400');
+      font-weight: 600;
+      margin-right: 8px;
+    }
+  }
+
+  a {
+    display: block;
+    font-size: 1rem;
+    padding: 8px 12px;
+
+    color: #9C27B0;
+    color: material-color('purple', '500');
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+}

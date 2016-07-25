@@ -2,11 +2,8 @@
 
 const $ = require('cash-dom');
 const Vue = require('vue');
-// const firebase = require('firebase');
-const firebase = window.firebase;
 const localforage = require('localforage');
 const page = require('page');
-// const PubSub = require('./pubsub');
 
 import { encrypt, decrypt } from './crypto.js';
 import Vault from './vault.js';
@@ -15,8 +12,11 @@ import Vault from './vault.js';
 localforage.config({ name: 'brick-password-manager' });
 
 import store from './store';
+import { firebase, usermanager } from './firebase';
 
-// localforage.clear();
+
+import app from './app';
+
 
 
 const PASS = '123456';
@@ -25,7 +25,26 @@ const SALT = 'salt';
 Vue.component('header-login', {
     replace: false,
     template: require('../templates/header-login.html'),
-    props: ['name', 'avatar', 'email']
+    props: ['store', 'name', 'avatar', 'email'],
+    data: () => ({ user: null }),
+
+    created() {
+        this.user = this.store.getState().user;
+        this.store.subscribe(() => {
+            this.user = this.store.getState().user;
+            // console.log(this.user.displayName);
+        });
+    },
+
+    computed: {
+        isUserLoggedIn() { return !!(this.user && this.user.uid); },
+        // user() { return this.store.getState().user; }
+    },
+
+    methods: {
+        login: () => usermanager.login('github'),
+        logout: () => usermanager.logout()
+    }
 });
 
 Vue.component('vault-view', {
@@ -36,12 +55,13 @@ Vue.component('vault-view', {
     data: () => ({ vault: null, password: '', decryptedSecrets: [] }),
 
     methods: {
-        initialize() {},
+        initializeVault(initPassword) { console.log(initPassword); },
         add() { console.log('add'); },
         remove() { console.log('remove'); },
         reveal() {},
         edit() {},
         copyToClipboard() {},
+        filter() {},
 
         lock() {},
         unlock() {}
@@ -54,38 +74,33 @@ Vue.component('vault-view', {
             return f[0];
         },
 
+        vaultLocked() {
+            return this.vault.hasPassword && true;
+        },
+
+        vaultOpen() {
+            return false;
+        },
+
         decryptedSecrets() {
             return [
-                { username: 'user1', password: 'password1', description: 'description' },
-                { username: 'user2', password: 'password2', description: 'description' },
-                { username: 'user3', password: 'password3', description: 'description' },
-                { username: 'user4', password: 'password4', description: 'description' },
-                { username: 'user5', password: 'password5', description: 'description' }
+                { title: 'title1234', username: 'user1', password: 'password1', description: 'description', tags: ['asdf', 'qwe', 'sfsdf', 'abc'] },
+                { title: 'title1234', username: 'user2', password: 'password2', description: 'description', tags: ['asdf', 'qwe', 'sfsdf', 'abc'] },
+                { title: 'title1234', username: 'user3', password: 'password3', description: 'description', tags: ['asdf', 'qwe', 'sfsdf', 'abc'] },
+                { title: 'title1234', username: 'user4', password: 'password4', description: 'description', tags: ['asdf', 'qwe', 'sfsdf', 'abc'] },
+                { title: 'title1234', username: 'user5', password: 'password5', description: 'description', tags: ['asdf', 'qwe', 'sfsdf', 'abc'] }
             ]
         }
     }
 });
-
-Vue.component('vault-editor', {
-    replace: false,
-    template: document.querySelector('#vault-editor-template').innerHTML,
-    props: ['vault'],
-
-    methods: {
-        save() {
-            console.log(this.vault.id);
-        }
-    }
-});
-
-// const store = require('./store');
 
 const model = new Vue({
     el: '#app-root',
 
     data: {
         user: null,
-        vaults: []
+        vaults: [],
+        store
     },
 
     init() {
@@ -169,13 +184,14 @@ store.subscribe(() => {
 });
 
 
-firebase.initializeApp({
-    apiKey: "AIzaSyAvdrVPo0WJMIA1qkMVz4_Ul_vDDPmJCGc",
-    authDomain: "passwords-b6edd.firebaseapp.com",
-    databaseURL: "https://passwords-b6edd.firebaseio.com",
-    storageBucket: "passwords-b6edd.appspot.com",
-});
-//
+// firebase.initializeApp({
+//     apiKey: "AIzaSyAvdrVPo0WJMIA1qkMVz4_Ul_vDDPmJCGc",
+//     authDomain: "passwords-b6edd.firebaseapp.com",
+//     databaseURL: "https://passwords-b6edd.firebaseio.com",
+//     storageBucket: "passwords-b6edd.appspot.com",
+// });
+
+
 // firebase.database().ref(`users/STxWl9QwIwWIwVpm9Z1fDmmdtju1`).once('value', s => {
 //     console.log(s.val());
 // });
@@ -188,9 +204,8 @@ firebase.initializeApp({
 // });
 
 // firebase.auth().onAuthStateChanged(model.setUser);
-firebase.auth().onAuthStateChanged(user => {
-    store.dispatch({ type: 'auth-state-changed', user });
-});
+// firebase.auth().onAuthStateChanged(user => store.dispatch({ type: 'auth-state-changed', user }));
+// firebase.auth().onAuthStateChanged(user => console.log(user));
 // firebase.auth().onAuthStateChanged(user => (user && console.log(user.uid)) || 'null user');
 // firebase.auth().onAuthStateChanged(x => console.log('auth state changed', x));
 

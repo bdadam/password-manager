@@ -9,8 +9,13 @@ const crypto = require('crypto');
 const fs = require('fs');
 
 gulp.task('sass', function () {
+    const moduleImporter = require('node-sass-module-importer');
+
     gulp.src('scss/main.scss')
-    .pipe(sass().on('error', sass.logError))
+    .pipe(sass({
+        // importer: moduleImporter
+        importer: require('node-sass-import')
+    }).on('error', sass.logError))
     .pipe(pleeease())
     .pipe(gulp.dest('public'));
 });

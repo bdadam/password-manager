@@ -35,15 +35,20 @@
     "gulp-smoosher": "0.0.9",
     "html-minify-loader": "^1.1.0",
     "localforage": "^1.4.2",
+    "node-sass-module-importer": "^0.1.0",
     "page": "^1.7.1",
     "pug": "^0.1.0",
     "pug-html-loader": "^1.0.8",
     "raw-loader": "^0.5.1",
     "redux": "^3.5.2",
+    "sass-material-colors": "0.0.5",
     "sjcl": "^1.0.3",
     "vue": "^1.0.26",
     "webpack": "^1.13.1",
     "webpack-dev-middleware": "^1.6.1",
     "webpack-stream": "^3.2.0"
+  },
+  "dependencies": {
+    "node-sass-import": "^1.0.0"
   }
 }
