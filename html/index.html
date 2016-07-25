@@ -22,16 +22,53 @@
         </header>
 
         <div class="container">
+
+            <table>
+                <tbody>
+                    <tr v-for="vault in vaults">
+                        <td>locked</td>
+                        <td>{{ vault.name }}</td>
+                        <td>{{ vault.id }}</td>
+                        <td>
+                            <button>Open</button>
+                            <button>Rename</button>
+                            <button>Change password</button>
+                            <button>Remove</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+
+            <button @click="showModal = true">Show modal</button>
+
+            <modal-window v-if="showModal" @close="showModal = false">
+                <p>asdfg</p>
+                <button @click="showModal = false">Close</button>
+            </modal-window>
+
+            <!-- <div transition="modal" v-if="showModal" @click.self="showModal = false">
+                <div style="background-color: #fff; max-width: 300px; height: 300px; width: 100%;">
+                    <p>blah</p>
+                    <div>sdssdfsd</div>
+                </div>
+            </div> -->
+
             <!-- <header class="hero-header">
                 <h1>Password Manager</h1>
             </header> -->
 
             <!-- <button>Lock all vaults</button> -->
 
-            <ul class="vault-tabs" v-if="vaults.length">
+            <!-- <ul class="vault-tabs" v-if="vaults.length">
                 <li v-for="vault in vaults" class="tab"><a href="/vaults/{{ vault.id }}">{{ vault.name }}</a></li>
                 <li><a href="/vaults/new">+ new vault</a></li>
                 <li style="float: right;"><a href="/vaults/settings">Settings</a></li>
+            </ul>
+            -->
+
+            <ul class="vault-tabs">
+                <li v-for="tab in tabs" :class="tab.classes"><a :href="tab.href">{{ tab.text }}</a></li>
             </ul>
 
             <div v-for="vault in vaults">

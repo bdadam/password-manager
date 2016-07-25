@@ -94,19 +94,31 @@ Vue.component('vault-view', {
     }
 });
 
+Vue.component('modal-window', {
+    replace: false,
+    template: '<div transition="modal" @click.self="close"><div style="background-color: #fff; max-width: 300px; height: 300px; width: 100%;"><slot></slot></div></div>',
+    methods: {
+        close() {
+            this.$emit('close');
+        }
+    }
+});
+
 const model = new Vue({
     el: '#app-root',
 
     data: {
         user: null,
         vaults: [],
-        store
+        store,
+        currentVaultId: null,
+        showModal: false
     },
 
     init() {
     },
 
-    ready: () => {
+    ready() {
         document.querySelector('#app-root').style.display = 'block';
     },
 
@@ -117,6 +129,13 @@ const model = new Vue({
 
         currentVault() {
             return this.vaults[0] || { title: 'default' };
+        },
+
+        tabs() {
+            const tabs = this.vaults.map(vault => ({ text: vault.name, href: `/vaults/${vault.id}`, title: '', classes: this.currentVaultId === vault.id ? 'tab active' : 'tab' }));
+            tabs.push({ text: '+ New vault', href: '/vaults/new', title: '', classes: 'tab' });
+            tabs.push({ text: 'Settings', href: '/vaults/settings', title: '', classes: 'tab' });
+            return tabs;
         }
     },
 
@@ -171,8 +190,13 @@ page('/', (ctx, next) => {
     console.log(ctx);
 });
 
+page('/vaults/new', (ctx, next) => {
+    console.log('new vault');
+});
+
 page('/vaults/:id', (ctx, next) => {
-    console.log(ctx);
+    console.log('vaultid:', ctx.params.id);
+    model.currentVaultId = ctx.params.id;
 });
 
 page({});

@@ -158,21 +158,32 @@
 	    }
 	});
 	
+	Vue.component('modal-window', {
+	    replace: false,
+	    template: '<div transition="modal" @click.self="close"><div style="background-color: #fff; max-width: 300px; height: 300px; width: 100%;"><slot></slot></div></div>',
+	    methods: {
+	        close: function close() {
+	            this.$emit('close');
+	        }
+	    }
+	});
+	
 	var model = new Vue({
 	    el: '#app-root',
 	
 	    data: {
 	        user: null,
 	        vaults: [],
-	        store: _store2.default
+	        store: _store2.default,
+	        currentVaultId: null,
+	        showModal: false
 	    },
 	
 	    init: function init() {},
-	
-	
 	    ready: function ready() {
 	        document.querySelector('#app-root').style.display = 'block';
 	    },
+	
 	
 	    computed: {
 	        isUserLoggedIn: function isUserLoggedIn() {
@@ -180,6 +191,16 @@
 	        },
 	        currentVault: function currentVault() {
 	            return this.vaults[0] || { title: 'default' };
+	        },
+	        tabs: function tabs() {
+	            var _this3 = this;
+	
+	            var tabs = this.vaults.map(function (vault) {
+	                return { text: vault.name, href: '/vaults/' + vault.id, title: '', classes: _this3.currentVaultId === vault.id ? 'tab active' : 'tab' };
+	            });
+	            tabs.push({ text: '+ New vault', href: '/vaults/new', title: '', classes: 'tab' });
+	            tabs.push({ text: 'Settings', href: '/vaults/settings', title: '', classes: 'tab' });
+	            return tabs;
 	        }
 	    },
 	
@@ -235,8 +256,13 @@
 	    console.log(ctx);
 	});
 	
+	page('/vaults/new', function (ctx, next) {
+	    console.log('new vault');
+	});
+	
 	page('/vaults/:id', function (ctx, next) {
-	    console.log(ctx);
+	    console.log('vaultid:', ctx.params.id);
+	    model.currentVaultId = ctx.params.id;
 	});
 	
 	page({});
@@ -1686,6 +1712,12 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var datastore = _localforage2.default.createInstance({ name: "brick-password-manager" });
+	//
+	// const dataWriteQueue = [];
+	// dataWriteQueue.push = obj => {
+	//     Array.prototype.push.call(dataWriteQueue, obj);
+	//
+	// };
 	
 	// const store = createStore((state = {}, action) => {
 	//     return state;
@@ -1699,11 +1731,20 @@
 	        _firebase.firebase.auth().onAuthStateChanged(function (user) {
 	            // datastore.setItem('user', { uid: user.uid, photoURL: user.photoURL, displayName: user.displayName, email: user.email }).then(() => store.dispatch({ type: 'auth-state-changed', user }));
 	            _store2.default.dispatch({ type: 'auth-state-changed', user: user });
+	            //
+	            // if (user.uid) {
+	            //     // sync datastore with firebase
+	            // }
 	        });
 	
 	        _store2.default.subscribe(function () {
+	            console.log('subscribe');
 	            var state = _store2.default.getState();
-	            datastore.setItem('user', state.user);
+	            datastore.setItem('user', state.user).then(function () {
+	                return console.log('succ');
+	            }).catch(function () {
+	                return console.log('err');
+	            });
 	            // datastore.setItem('vaults', state.vaults);
 	        });
 	    },
@@ -1711,7 +1752,9 @@
 	
 	    user: {
 	        login: function login() {
-	            var authProvider = new _firebase.firebase.auth.GithubAuthProvider();
+	            var provider = arguments.length <= 0 || arguments[0] === undefined ? 'Github' : arguments[0];
+	
+	            var authProvider = new _firebase.firebase.auth[provider + 'AuthProvider']();
 	            authProvider.addScope('user');
 	            _firebase.firebase.auth().signInWithRedirect(authProvider);
 	

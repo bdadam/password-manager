@@ -10,6 +10,12 @@ import localforage from 'localforage';
 import store from './store';
 
 const datastore = localforage.createInstance({ name: "brick-password-manager" });
+//
+// const dataWriteQueue = [];
+// dataWriteQueue.push = obj => {
+//     Array.prototype.push.call(dataWriteQueue, obj);
+//
+// };
 
 const app = {
     init() {
@@ -17,18 +23,23 @@ const app = {
         firebase.auth().onAuthStateChanged(user => {
             // datastore.setItem('user', { uid: user.uid, photoURL: user.photoURL, displayName: user.displayName, email: user.email }).then(() => store.dispatch({ type: 'auth-state-changed', user }));
             store.dispatch({ type: 'auth-state-changed', user });
+            //
+            // if (user.uid) {
+            //     // sync datastore with firebase
+            // }
         });
 
         store.subscribe(() => {
+            console.log('subscribe');
             const state = store.getState();
-            datastore.setItem('user', state.user);
+            datastore.setItem('user', state.user).then(() => console.log('succ')).catch(() => console.log('err'));
             // datastore.setItem('vaults', state.vaults);
         });
     },
 
     user: {
-        login() {
-            var authProvider = new firebase.auth.GithubAuthProvider();
+        login(provider = 'Github') {
+            var authProvider = new firebase.auth[`${provider}AuthProvider`]();
             authProvider.addScope('user');
             firebase.auth().signInWithRedirect(authProvider);
 
