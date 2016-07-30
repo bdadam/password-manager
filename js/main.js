@@ -2,48 +2,87 @@
 
 const $ = require('cash-dom');
 const Vue = require('vue');
-const localforage = require('localforage');
 const page = require('page');
 
 import { encrypt, decrypt } from './crypto.js';
 import Vault from './vault.js';
 
 
-localforage.config({ name: 'brick-password-manager' });
-
 import store from './store';
-import { firebase, usermanager } from './firebase';
+import { firebase } from './firebase';
+
+import once from 'lodash/once';
+// import once from 'lodash';
 
 
 import app from './app';
 
-
-
 const PASS = '123456';
 const SALT = 'salt';
 
-Vue.component('header-login', {
-    replace: false,
-    template: require('../templates/header-login.html'),
-    props: ['store', 'name', 'avatar', 'email'],
-    data: () => ({ user: null }),
+import uuid from './uuid';
 
-    created() {
-        this.user = this.store.getState().user;
-        this.store.subscribe(() => {
-            this.user = this.store.getState().user;
-            // console.log(this.user.displayName);
-        });
+Vue.component('app-header', {
+    replace: false,
+    template: require('../templates/app-header.html'),
+
+    data() {
+        return { user: null };
     },
 
-    computed: {
-        isUserLoggedIn() { return !!(this.user && this.user.uid); },
-        // user() { return this.store.getState().user; }
+    created() {
+        this.user = firebase.auth().currentUser;
+        firebase.auth().onAuthStateChanged(user => this.user = user);
     },
 
     methods: {
-        login: () => usermanager.login('github'),
-        logout: () => usermanager.logout()
+        logout() { firebase.auth().signOut(); }
+    }
+});
+
+// Screens:
+// - create vault
+// - edit vault
+// - unlock vault (provide password)
+// - vault content (list of secrets)
+// - edit secret / detail view
+
+Vue.component('app-main', {
+    replace: false,
+    template: require('../templates/app-main.html'),
+    data() {
+        return {
+            vaults: {},
+            vaultsLoading: false
+        };
+    },
+
+    created() {
+        this.vaultsLoading = true;
+        const uid = firebase.auth().currentUser.uid;
+        const dbref = firebase.database().ref(`users/${uid}/vaults-test`);
+        dbref.on('value', snap => {
+            console.log(snap.val());
+            this.vaults = snap.val();
+            this.vaultsLoading = false;
+        });
+    },
+
+    methods: {
+        createVault() {
+            const uid = firebase.auth().currentUser.uid;
+            const id = uuid();
+            const dbref = firebase.database().ref(`users/${uid}/vaults-test/${id}`);
+            dbref.set({ name: 'Test name', id, meta: { created: firebase.database.ServerValue.TIMESTAMP }, secrets: [] })
+                    .then(x => console.log(x))
+                    .catch(e => console.error(e));
+        },
+
+        removeVault(id) {
+            const uid = firebase.auth().currentUser.uid;
+            const dbref = firebase.database().ref(`users/${uid}/vaults-test/${id}`);
+            dbref.remove();
+        }
     }
 });
 
@@ -104,6 +143,17 @@ Vue.component('modal-window', {
     }
 });
 
+Vue.component('login-screen', {
+    replace: false,
+    template: require('../templates/login-screen.html'),
+    methods: {
+        login(provider) {
+            var authProvider = new firebase.auth[`${provider}AuthProvider`]();
+            firebase.auth().signInWithRedirect(authProvider);
+        }
+    }
+});
+
 const model = new Vue({
     el: '#app-root',
 
@@ -112,20 +162,29 @@ const model = new Vue({
         vaults: [],
         store,
         currentVaultId: null,
-        showModal: false
-    },
+        showModal: false,
 
-    init() {
+        starting: true,
+        currentview: ''
     },
 
     ready() {
-        document.querySelector('#app-root').style.display = 'block';
+        firebase.auth().getRedirectResult().catch(ex => {
+            // todo: log exception to GA
+        }).then(() => {
+            firebase.auth().onAuthStateChanged(user => {
+                this.starting = false;
+
+                if (user && user.uid) {
+                    this.currentview = 'app-main';
+                } else {
+                    this.currentview = 'login-screen';
+                }
+            });
+        });
     },
 
     computed: {
-        isUserLoggedIn () {
-            return this.user && this.user.uid;
-        },
 
         currentVault() {
             return this.vaults[0] || { title: 'default' };
@@ -140,16 +199,6 @@ const model = new Vue({
     },
 
     methods: {
-        loginWithGitHub() {
-            var p = new firebase.auth.GithubAuthProvider();
-            p.addScope('user');
-            firebase.auth().signInWithRedirect(p);
-        },
-
-        logout: () => {
-            firebase.auth().signOut();
-        },
-
         createSecret: () => {
             console.log('create secret');
 
@@ -161,34 +210,26 @@ const model = new Vue({
             dbref.push(encrypt(JSON.stringify({ asdf: 'qwe_' + Math.random() }), SALT, PASS));
         },
 
-        sync: () => {
-            const dbref = firebase.database().ref(`user-passwords/${model.user.uid}`);
-
-            dbref.once('value', snap => {
-                snap.forEach(x => {
-                    const encryptedVal = x.val();
-                    const realVal = decrypt(encryptedVal, SALT, PASS);
-                    const id = x.key;
-                    const obj = JSON.parse(realVal);
-                    console.log(id, encryptedVal, realVal, obj);
-                });
-            });
-
-            // firebase.database().ref(`user-passwords/${model.user.uid}`).push({
-            //     asdf: 'qwe'
-            // });
-        },
-
-        test() {
-            console.log(this);
-            console.log(this === model);
-        }
+        // sync: () => {
+        //     const dbref = firebase.database().ref(`user-passwords/${model.user.uid}`);
+        //
+        //     dbref.once('value', snap => {
+        //         snap.forEach(x => {
+        //             const encryptedVal = x.val();
+        //             const realVal = decrypt(encryptedVal, SALT, PASS);
+        //             const id = x.key;
+        //             const obj = JSON.parse(realVal);
+        //             console.log(id, encryptedVal, realVal, obj);
+        //         });
+        //     });
+        // }
     }
 });
 
 page('/', (ctx, next) => {
-    console.log(ctx);
+    // console.log(ctx);
 });
+
 
 page('/vaults/new', (ctx, next) => {
     console.log('new vault');
@@ -207,6 +248,11 @@ store.subscribe(() => {
     model.vaults = state.vaults;
 });
 
+
+
+// window.jwtdecode = require('jwt-decode');
+
+// firebase.auth().signInWithCredential(firebase.auth.GithubAuthProvider.credential('a5684313144fa64eb3e3aeac9e6ad077b94f3588'))
 
 // firebase.initializeApp({
 //     apiKey: "AIzaSyAvdrVPo0WJMIA1qkMVz4_Ul_vDDPmJCGc",

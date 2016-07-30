@@ -9,6 +9,7 @@ module.exports = {
 	bail: false,
 	entry: {
         main: './js/main.js',
+		sw: './js/service-worker.js'
 	},
 	output: {
 		path: path.join(__dirname, "public"),
@@ -23,8 +24,7 @@ module.exports = {
 		]
 	},
 	plugins: [
-		// new webpack.DefinePlugin({ 'process.env.NODE_ENV': '"production"' }),
-
+		new webpack.DefinePlugin({ 'process.env.NODE_ENV': '"production"' }),
 		// new webpack.optimize.DedupePlugin(),
 		// new webpack.optimize.OccurrenceOrderPlugin(),
 		// new webpack.optimize.UglifyJsPlugin({

@@ -7,6 +7,7 @@ const webpackConfig = require('./webpack.config.js');
 const replace = require('gulp-replace');
 const crypto = require('crypto');
 const fs = require('fs');
+const rename = require("gulp-rename");
 
 gulp.task('sass', function () {
     const moduleImporter = require('node-sass-module-importer');
@@ -29,10 +30,19 @@ gulp.task('js', cb => {
 });
 
 gulp.task('html', function () {
-    gulp.src('html/index.html')
+    return gulp.src('html/vaults.html')
         .pipe(replace('##js_hash##', crypto.createHash('md5').update(fs.readFileSync('public/main.js')).digest('hex').substring(0, 6)))
         .pipe(replace('##css_hash##', crypto.createHash('md5').update(fs.readFileSync('public/main.css')).digest('hex').substring(0, 6)))
+        .pipe(rename('index.html'))
+        // .pipe(gulp.dest('public/vaults'));
         .pipe(gulp.dest('public'));
+
+    // gulp.src('html/home.html')
+    //     .pipe(replace('##js_hash##', crypto.createHash('md5').update(fs.readFileSync('public/main.js')).digest('hex').substring(0, 6)))
+    //     .pipe(replace('##css_hash##', crypto.createHash('md5').update(fs.readFileSync('public/main.css')).digest('hex').substring(0, 6)))
+    //     .pipe(rename('index.html'))
+    //     .pipe(gulp.dest('public'));
+
 });
 
 gulp.task('sass:watch', ['sass'], () => {
@@ -77,7 +87,7 @@ gulp.task('dev', ['sass:watch', 'js:watch', 'html:watch'], () => {
             baseDir: './public',
             port: 3000,
             middleware: [function(req, res, next) {
-                if (!/(\.js|\.css|\.jpg|browser-sync-client)/.test(req.url)) {
+                if (!/(\.js|\.css|\.jpg|\.html|browser-sync-client)/.test(req.url)) {
                     req.url = '/';
                 }
 

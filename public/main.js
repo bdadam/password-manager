@@ -58,60 +58,104 @@
 	
 	var _firebase = __webpack_require__(18);
 	
-	var _app = __webpack_require__(19);
+	var _once = __webpack_require__(19);
+	
+	var _once2 = _interopRequireDefault(_once);
+	
+	var _app = __webpack_require__(28);
 	
 	var _app2 = _interopRequireDefault(_app);
 	
+	var _uuid = __webpack_require__(30);
+	
+	var _uuid2 = _interopRequireDefault(_uuid);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var $ = __webpack_require__(21);
-	var Vue = __webpack_require__(22);
-	var localforage = __webpack_require__(20);
-	var page = __webpack_require__(23);
-	
-	localforage.config({ name: 'brick-password-manager' });
+	var $ = __webpack_require__(31);
+	var Vue = __webpack_require__(32);
+	var page = __webpack_require__(33);
+	// import once from 'lodash';
 	
 	var PASS = '123456';
 	var SALT = 'salt';
 	
-	Vue.component('header-login', {
+	Vue.component('app-header', {
 	    replace: false,
-	    template: __webpack_require__(26),
-	    props: ['store', 'name', 'avatar', 'email'],
+	    template: __webpack_require__(36),
+	
 	    data: function data() {
 	        return { user: null };
 	    },
-	
 	    created: function created() {
 	        var _this = this;
 	
-	        this.user = this.store.getState().user;
-	        this.store.subscribe(function () {
-	            _this.user = _this.store.getState().user;
-	            // console.log(this.user.displayName);
+	        this.user = _firebase.firebase.auth().currentUser;
+	        _firebase.firebase.auth().onAuthStateChanged(function (user) {
+	            return _this.user = user;
 	        });
 	    },
 	
 	
-	    computed: {
-	        isUserLoggedIn: function isUserLoggedIn() {
-	            return !!(this.user && this.user.uid);
+	    methods: {
+	        logout: function logout() {
+	            _firebase.firebase.auth().signOut();
 	        }
+	    }
+	});
+	
+	// Screens:
+	// - create vault
+	// - edit vault
+	// - unlock vault (provide password)
+	// - vault content (list of secrets)
+	// - edit secret / detail view
+	
+	Vue.component('app-main', {
+	    replace: false,
+	    template: __webpack_require__(37),
+	    data: function data() {
+	        return {
+	            vaults: {},
+	            vaultsLoading: false
+	        };
+	    },
+	    created: function created() {
+	        var _this2 = this;
+	
+	        this.vaultsLoading = true;
+	        var uid = _firebase.firebase.auth().currentUser.uid;
+	        var dbref = _firebase.firebase.database().ref('users/' + uid + '/vaults-test');
+	        dbref.on('value', function (snap) {
+	            console.log(snap.val());
+	            _this2.vaults = snap.val();
+	            _this2.vaultsLoading = false;
+	        });
 	    },
 	
+	
 	    methods: {
-	        login: function login() {
-	            return _firebase.usermanager.login('github');
+	        createVault: function createVault() {
+	            var uid = _firebase.firebase.auth().currentUser.uid;
+	            var id = (0, _uuid2.default)();
+	            var dbref = _firebase.firebase.database().ref('users/' + uid + '/vaults-test/' + id);
+	            dbref.set({ name: 'Test name', id: id, meta: { created: _firebase.firebase.database.ServerValue.TIMESTAMP }, secrets: [] }).then(function (x) {
+	                return console.log(x);
+	            }).catch(function (e) {
+	                return console.error(e);
+	            });
 	        },
-	        logout: function logout() {
-	            return _firebase.usermanager.logout();
+	        removeVault: function removeVault(id) {
+	            var uid = _firebase.firebase.auth().currentUser.uid;
+	            var dbref = _firebase.firebase.database().ref('users/' + uid + '/vaults-test/' + id);
+	            dbref.remove();
 	        }
 	    }
 	});
 	
 	Vue.component('vault-view', {
 	    replace: false,
-	    template: __webpack_require__(27),
+	    template: __webpack_require__(38),
 	    props: ['vaultid'],
 	
 	    data: function data() {
@@ -138,11 +182,11 @@
 	
 	    computed: {
 	        vault: function vault() {
-	            var _this2 = this;
+	            var _this3 = this;
 	
 	            var state = _store2.default.getState();
 	            var f = state.vaults.filter(function (v) {
-	                return v.id === _this2.vaultid;
+	                return v.id === _this3.vaultid;
 	            });
 	            return f[0];
 	        },
@@ -168,6 +212,17 @@
 	    }
 	});
 	
+	Vue.component('login-screen', {
+	    replace: false,
+	    template: __webpack_require__(39),
+	    methods: {
+	        login: function login(provider) {
+	            var authProvider = new _firebase.firebase.auth[provider + 'AuthProvider']();
+	            _firebase.firebase.auth().signInWithRedirect(authProvider);
+	        }
+	    }
+	});
+	
 	var model = new Vue({
 	    el: '#app-root',
 	
@@ -176,27 +231,40 @@
 	        vaults: [],
 	        store: _store2.default,
 	        currentVaultId: null,
-	        showModal: false
+	        showModal: false,
+	
+	        starting: true,
+	        currentview: ''
 	    },
 	
-	    init: function init() {},
 	    ready: function ready() {
-	        document.querySelector('#app-root').style.display = 'block';
+	        var _this4 = this;
+	
+	        _firebase.firebase.auth().getRedirectResult().catch(function (ex) {
+	            // todo: log exception to GA
+	        }).then(function () {
+	            _firebase.firebase.auth().onAuthStateChanged(function (user) {
+	                _this4.starting = false;
+	
+	                if (user && user.uid) {
+	                    _this4.currentview = 'app-main';
+	                } else {
+	                    _this4.currentview = 'login-screen';
+	                }
+	            });
+	        });
 	    },
 	
 	
 	    computed: {
-	        isUserLoggedIn: function isUserLoggedIn() {
-	            return this.user && this.user.uid;
-	        },
 	        currentVault: function currentVault() {
 	            return this.vaults[0] || { title: 'default' };
 	        },
 	        tabs: function tabs() {
-	            var _this3 = this;
+	            var _this5 = this;
 	
 	            var tabs = this.vaults.map(function (vault) {
-	                return { text: vault.name, href: '/vaults/' + vault.id, title: '', classes: _this3.currentVaultId === vault.id ? 'tab active' : 'tab' };
+	                return { text: vault.name, href: '/vaults/' + vault.id, title: '', classes: _this5.currentVaultId === vault.id ? 'tab active' : 'tab' };
 	            });
 	            tabs.push({ text: '+ New vault', href: '/vaults/new', title: '', classes: 'tab' });
 	            tabs.push({ text: 'Settings', href: '/vaults/settings', title: '', classes: 'tab' });
@@ -205,17 +273,6 @@
 	    },
 	
 	    methods: {
-	        loginWithGitHub: function loginWithGitHub() {
-	            var p = new _firebase.firebase.auth.GithubAuthProvider();
-	            p.addScope('user');
-	            _firebase.firebase.auth().signInWithRedirect(p);
-	        },
-	
-	
-	        logout: function logout() {
-	            _firebase.firebase.auth().signOut();
-	        },
-	
 	        createSecret: function createSecret() {
 	            console.log('create secret');
 	
@@ -225,35 +282,13 @@
 	            });
 	
 	            dbref.push((0, _crypto.encrypt)(JSON.stringify({ asdf: 'qwe_' + Math.random() }), SALT, PASS));
-	        },
-	
-	        sync: function sync() {
-	            var dbref = _firebase.firebase.database().ref('user-passwords/' + model.user.uid);
-	
-	            dbref.once('value', function (snap) {
-	                snap.forEach(function (x) {
-	                    var encryptedVal = x.val();
-	                    var realVal = (0, _crypto.decrypt)(encryptedVal, SALT, PASS);
-	                    var id = x.key;
-	                    var obj = JSON.parse(realVal);
-	                    console.log(id, encryptedVal, realVal, obj);
-	                });
-	            });
-	
-	            // firebase.database().ref(`user-passwords/${model.user.uid}`).push({
-	            //     asdf: 'qwe'
-	            // });
-	        },
-	
-	        test: function test() {
-	            console.log(this);
-	            console.log(this === model);
 	        }
+	
 	    }
 	});
 	
 	page('/', function (ctx, next) {
-	    console.log(ctx);
+	    // console.log(ctx);
 	});
 	
 	page('/vaults/new', function (ctx, next) {
@@ -272,6 +307,10 @@
 	    model.user = state.user;
 	    model.vaults = state.vaults;
 	});
+	
+	// window.jwtdecode = require('jwt-decode');
+	
+	// firebase.auth().signInWithCredential(firebase.auth.GithubAuthProvider.credential('a5684313144fa64eb3e3aeac9e6ad077b94f3588'))
 	
 	// firebase.initializeApp({
 	//     apiKey: "AIzaSyAvdrVPo0WJMIA1qkMVz4_Ul_vDDPmJCGc",
@@ -1632,6 +1671,7 @@
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var firebase = window.firebase;
+	// const firebase = require('firebase');
 	
 	var userid;
 	
@@ -1691,6 +1731,410 @@
 /* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var before = __webpack_require__(20);
+	
+	/**
+	 * Creates a function that is restricted to invoking `func` once. Repeat calls
+	 * to the function return the value of the first invocation. The `func` is
+	 * invoked with the `this` binding and arguments of the created function.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @category Function
+	 * @param {Function} func The function to restrict.
+	 * @returns {Function} Returns the new restricted function.
+	 * @example
+	 *
+	 * var initialize = _.once(createApplication);
+	 * initialize();
+	 * initialize();
+	 * // => `createApplication` is invoked once
+	 */
+	function once(func) {
+	  return before(2, func);
+	}
+	
+	module.exports = once;
+
+
+/***/ },
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var toInteger = __webpack_require__(21);
+	
+	/** Used as the `TypeError` message for "Functions" methods. */
+	var FUNC_ERROR_TEXT = 'Expected a function';
+	
+	/**
+	 * Creates a function that invokes `func`, with the `this` binding and arguments
+	 * of the created function, while it's called less than `n` times. Subsequent
+	 * calls to the created function return the result of the last `func` invocation.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 3.0.0
+	 * @category Function
+	 * @param {number} n The number of calls at which `func` is no longer invoked.
+	 * @param {Function} func The function to restrict.
+	 * @returns {Function} Returns the new restricted function.
+	 * @example
+	 *
+	 * jQuery(element).on('click', _.before(5, addContactToList));
+	 * // => Allows adding up to 4 contacts to the list.
+	 */
+	function before(n, func) {
+	  var result;
+	  if (typeof func != 'function') {
+	    throw new TypeError(FUNC_ERROR_TEXT);
+	  }
+	  n = toInteger(n);
+	  return function() {
+	    if (--n > 0) {
+	      result = func.apply(this, arguments);
+	    }
+	    if (n <= 1) {
+	      func = undefined;
+	    }
+	    return result;
+	  };
+	}
+	
+	module.exports = before;
+
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var toFinite = __webpack_require__(22);
+	
+	/**
+	 * Converts `value` to an integer.
+	 *
+	 * **Note:** This method is loosely based on
+	 * [`ToInteger`](http://www.ecma-international.org/ecma-262/6.0/#sec-tointeger).
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 4.0.0
+	 * @category Lang
+	 * @param {*} value The value to convert.
+	 * @returns {number} Returns the converted integer.
+	 * @example
+	 *
+	 * _.toInteger(3.2);
+	 * // => 3
+	 *
+	 * _.toInteger(Number.MIN_VALUE);
+	 * // => 0
+	 *
+	 * _.toInteger(Infinity);
+	 * // => 1.7976931348623157e+308
+	 *
+	 * _.toInteger('3.2');
+	 * // => 3
+	 */
+	function toInteger(value) {
+	  var result = toFinite(value),
+	      remainder = result % 1;
+	
+	  return result === result ? (remainder ? result - remainder : result) : 0;
+	}
+	
+	module.exports = toInteger;
+
+
+/***/ },
+/* 22 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var toNumber = __webpack_require__(23);
+	
+	/** Used as references for various `Number` constants. */
+	var INFINITY = 1 / 0,
+	    MAX_INTEGER = 1.7976931348623157e+308;
+	
+	/**
+	 * Converts `value` to a finite number.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 4.12.0
+	 * @category Lang
+	 * @param {*} value The value to convert.
+	 * @returns {number} Returns the converted number.
+	 * @example
+	 *
+	 * _.toFinite(3.2);
+	 * // => 3.2
+	 *
+	 * _.toFinite(Number.MIN_VALUE);
+	 * // => 5e-324
+	 *
+	 * _.toFinite(Infinity);
+	 * // => 1.7976931348623157e+308
+	 *
+	 * _.toFinite('3.2');
+	 * // => 3.2
+	 */
+	function toFinite(value) {
+	  if (!value) {
+	    return value === 0 ? value : 0;
+	  }
+	  value = toNumber(value);
+	  if (value === INFINITY || value === -INFINITY) {
+	    var sign = (value < 0 ? -1 : 1);
+	    return sign * MAX_INTEGER;
+	  }
+	  return value === value ? value : 0;
+	}
+	
+	module.exports = toFinite;
+
+
+/***/ },
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isFunction = __webpack_require__(24),
+	    isObject = __webpack_require__(25),
+	    isSymbol = __webpack_require__(26);
+	
+	/** Used as references for various `Number` constants. */
+	var NAN = 0 / 0;
+	
+	/** Used to match leading and trailing whitespace. */
+	var reTrim = /^\s+|\s+$/g;
+	
+	/** Used to detect bad signed hexadecimal string values. */
+	var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+	
+	/** Used to detect binary string values. */
+	var reIsBinary = /^0b[01]+$/i;
+	
+	/** Used to detect octal string values. */
+	var reIsOctal = /^0o[0-7]+$/i;
+	
+	/** Built-in method references without a dependency on `root`. */
+	var freeParseInt = parseInt;
+	
+	/**
+	 * Converts `value` to a number.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 4.0.0
+	 * @category Lang
+	 * @param {*} value The value to process.
+	 * @returns {number} Returns the number.
+	 * @example
+	 *
+	 * _.toNumber(3.2);
+	 * // => 3.2
+	 *
+	 * _.toNumber(Number.MIN_VALUE);
+	 * // => 5e-324
+	 *
+	 * _.toNumber(Infinity);
+	 * // => Infinity
+	 *
+	 * _.toNumber('3.2');
+	 * // => 3.2
+	 */
+	function toNumber(value) {
+	  if (typeof value == 'number') {
+	    return value;
+	  }
+	  if (isSymbol(value)) {
+	    return NAN;
+	  }
+	  if (isObject(value)) {
+	    var other = isFunction(value.valueOf) ? value.valueOf() : value;
+	    value = isObject(other) ? (other + '') : other;
+	  }
+	  if (typeof value != 'string') {
+	    return value === 0 ? value : +value;
+	  }
+	  value = value.replace(reTrim, '');
+	  var isBinary = reIsBinary.test(value);
+	  return (isBinary || reIsOctal.test(value))
+	    ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
+	    : (reIsBadHex.test(value) ? NAN : +value);
+	}
+	
+	module.exports = toNumber;
+
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isObject = __webpack_require__(25);
+	
+	/** `Object#toString` result references. */
+	var funcTag = '[object Function]',
+	    genTag = '[object GeneratorFunction]';
+	
+	/** Used for built-in method references. */
+	var objectProto = Object.prototype;
+	
+	/**
+	 * Used to resolve the
+	 * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+	 * of values.
+	 */
+	var objectToString = objectProto.toString;
+	
+	/**
+	 * Checks if `value` is classified as a `Function` object.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+	 * @example
+	 *
+	 * _.isFunction(_);
+	 * // => true
+	 *
+	 * _.isFunction(/abc/);
+	 * // => false
+	 */
+	function isFunction(value) {
+	  // The use of `Object#toString` avoids issues with the `typeof` operator
+	  // in Safari 8 which returns 'object' for typed array and weak map constructors,
+	  // and PhantomJS 1.9 which returns 'function' for `NodeList` instances.
+	  var tag = isObject(value) ? objectToString.call(value) : '';
+	  return tag == funcTag || tag == genTag;
+	}
+	
+	module.exports = isFunction;
+
+
+/***/ },
+/* 25 */
+/***/ function(module, exports) {
+
+	/**
+	 * Checks if `value` is the
+	 * [language type](http://www.ecma-international.org/ecma-262/6.0/#sec-ecmascript-language-types)
+	 * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+	 * @example
+	 *
+	 * _.isObject({});
+	 * // => true
+	 *
+	 * _.isObject([1, 2, 3]);
+	 * // => true
+	 *
+	 * _.isObject(_.noop);
+	 * // => true
+	 *
+	 * _.isObject(null);
+	 * // => false
+	 */
+	function isObject(value) {
+	  var type = typeof value;
+	  return !!value && (type == 'object' || type == 'function');
+	}
+	
+	module.exports = isObject;
+
+
+/***/ },
+/* 26 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isObjectLike = __webpack_require__(27);
+	
+	/** `Object#toString` result references. */
+	var symbolTag = '[object Symbol]';
+	
+	/** Used for built-in method references. */
+	var objectProto = Object.prototype;
+	
+	/**
+	 * Used to resolve the
+	 * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+	 * of values.
+	 */
+	var objectToString = objectProto.toString;
+	
+	/**
+	 * Checks if `value` is classified as a `Symbol` primitive or object.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 4.0.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+	 * @example
+	 *
+	 * _.isSymbol(Symbol.iterator);
+	 * // => true
+	 *
+	 * _.isSymbol('abc');
+	 * // => false
+	 */
+	function isSymbol(value) {
+	  return typeof value == 'symbol' ||
+	    (isObjectLike(value) && objectToString.call(value) == symbolTag);
+	}
+	
+	module.exports = isSymbol;
+
+
+/***/ },
+/* 27 */
+/***/ function(module, exports) {
+
+	/**
+	 * Checks if `value` is object-like. A value is object-like if it's not `null`
+	 * and has a `typeof` result of "object".
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 4.0.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+	 * @example
+	 *
+	 * _.isObjectLike({});
+	 * // => true
+	 *
+	 * _.isObjectLike([1, 2, 3]);
+	 * // => true
+	 *
+	 * _.isObjectLike(_.noop);
+	 * // => false
+	 *
+	 * _.isObjectLike(null);
+	 * // => false
+	 */
+	function isObjectLike(value) {
+	  return !!value && typeof value == 'object';
+	}
+	
+	module.exports = isObjectLike;
+
+
+/***/ },
+/* 28 */
+/***/ function(module, exports, __webpack_require__) {
+
 	'use strict';
 	
 	Object.defineProperty(exports, "__esModule", {
@@ -1701,7 +2145,7 @@
 	
 	var _firebase = __webpack_require__(18);
 	
-	var _localforage = __webpack_require__(20);
+	var _localforage = __webpack_require__(29);
 	
 	var _localforage2 = _interopRequireDefault(_localforage);
 	
@@ -1787,7 +2231,7 @@
 	exports.default = app;
 
 /***/ },
-/* 20 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var require;var require;/* WEBPACK VAR INJECTION */(function(global) {/*!
@@ -4089,7 +4533,27 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 21 */
+/* 30 */
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	var uuid = function uuid() {
+	    // http://stackoverflow.com/a/2117523
+	    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+	        var r = Math.random() * 16 | 0,
+	            v = c == 'x' ? r : r & 0x3 | 0x8;
+	        return v.toString(16);
+	    });
+	};
+	
+	exports.default = uuid;
+
+/***/ },
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;"use strict";
@@ -4964,7 +5428,7 @@
 	});
 
 /***/ },
-/* 22 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, process) {/*!
@@ -15044,7 +15508,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(5)))
 
 /***/ },
-/* 23 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {  /* globals require, module */
@@ -15055,7 +15519,7 @@
 	   * Module dependencies.
 	   */
 	
-	  var pathtoRegexp = __webpack_require__(24);
+	  var pathtoRegexp = __webpack_require__(34);
 	
 	  /**
 	   * Module exports.
@@ -15673,10 +16137,10 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 24 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isarray = __webpack_require__(25)
+	var isarray = __webpack_require__(35)
 	
 	/**
 	 * Expose `pathToRegexp`.
@@ -16069,7 +16533,7 @@
 
 
 /***/ },
-/* 25 */
+/* 35 */
 /***/ function(module, exports) {
 
 	module.exports = Array.isArray || function (arr) {
@@ -16078,16 +16542,28 @@
 
 
 /***/ },
-/* 26 */
+/* 36 */
 /***/ function(module, exports) {
 
-	module.exports = "<div v-if=!isUserLoggedIn><button @click=login>Login</button></div><div v-if=isUserLoggedIn><button @click=logout>Logout</button><div style=\"display: inline-block; text-align: center; vertical-align: middle; margin: 0 16px; position: relative;\"><p style=\"line-height: 1;\">{{ user.displayName }}</p><p style=\"color: #999; font-size: 0.875rem; line-height: 1;\">{{ user.email }}</p></div><div style=\"display: inline-block;\"></div><img :src=user.photoURL style=\"max-height: 48px; border-radius: 100%; vertical-align: middle;\"></div>"
+	module.exports = "<div class=container><a href=\"/\" class=logo>Home</a> <a href=\"/\">About</a><div v-if=user style=\"float: right; line-height: 80px; display: inline-block;\"><button @click=logout>Logout</button><div style=\"display: inline-block; text-align: center; vertical-align: middle; margin: 0 16px; position: relative;\"><p style=\"line-height: 1;\">{{ user.displayName }}</p><p style=\"color: #999; font-size: 0.875rem; line-height: 1;\">{{ user.email }}</p></div><img :src=user.photoURL style=\"max-height: 48px; border-radius: 100%; vertical-align: middle;\"></div></div>"
 
 /***/ },
-/* 27 */
+/* 37 */
+/***/ function(module, exports) {
+
+	module.exports = "<div v-if=vaultsLoading><svg style=\"width: 120px; height: 120px;\" xmlns=http://www.w3.org/2000/svg viewbox=\"0 0 100 100\" preserveaspectratio=xMidYMid class=uil-ring><path fill=none class=bk d=\"M0 0h100v100H0z\"></path><defs><filter id=a x=-100% y=-100% width=300% height=300%><feoffset result=offOut in=SourceGraphic><fegaussianblur result=blurOut in=offOut><feblend in=SourceGraphic in2=blurOut></feblend></fegaussianblur></feoffset></filter></defs><path d=\"M10 50s0 .5.1 1.4c0 .5.1 1 .2 1.7 0 .3.1.7.1 1.1.1.4.1.8.2 1.2.2.8.3 1.8.5 2.8.3 1 .6 2.1.9 3.2.3 1.1.9 2.3 1.4 3.5.5 1.2 1.2 2.4 1.8 3.7.3.6.8 1.2 1.2 1.9.4.6.8 1.3 1.3 1.9 1 1.2 1.9 2.6 3.1 3.7 2.2 2.5 5 4.7 7.9 6.7 3 2 6.5 3.4 10.1 4.6 3.6 1.1 7.5 1.5 11.2 1.6 4-.1 7.7-.6 11.3-1.6 3.6-1.2 7-2.6 10-4.6 3-2 5.8-4.2 7.9-6.7 1.2-1.2 2.1-2.5 3.1-3.7.5-.6.9-1.3 1.3-1.9.4-.6.8-1.3 1.2-1.9.6-1.3 1.3-2.5 1.8-3.7.5-1.2 1-2.4 1.4-3.5.3-1.1.6-2.2.9-3.2.2-1 .4-1.9.5-2.8.1-.4.1-.8.2-1.2 0-.4.1-.7.1-1.1.1-.7.1-1.2.2-1.7.1-.9.1-1.4.1-1.4V54.2c0 .4-.1.8-.1 1.2-.1.9-.2 1.8-.4 2.8-.2 1-.5 2.1-.7 3.3-.3 1.2-.8 2.4-1.2 3.7-.2.7-.5 1.3-.8 1.9-.3.7-.6 1.3-.9 2-.3.7-.7 1.3-1.1 2-.4.7-.7 1.4-1.2 2-1 1.3-1.9 2.7-3.1 4-2.2 2.7-5 5-8.1 7.1L70 85.7c-.8.5-1.7.9-2.6 1.3l-1.4.7-1.4.5c-.9.3-1.8.7-2.8 1C58 90.3 53.9 90.9 50 91l-3-.2c-1 0-2-.2-3-.3l-1.5-.2-.7-.1-.7-.2c-1-.3-1.9-.5-2.9-.7-.9-.3-1.9-.7-2.8-1l-1.4-.6-1.3-.6c-.9-.4-1.8-.8-2.6-1.3l-2.4-1.5c-3.1-2.1-5.9-4.5-8.1-7.1-1.2-1.2-2.1-2.7-3.1-4-.5-.6-.8-1.4-1.2-2-.4-.7-.8-1.3-1.1-2-.3-.7-.6-1.3-.9-2-.3-.7-.6-1.3-.8-1.9-.4-1.3-.9-2.5-1.2-3.7-.3-1.2-.5-2.3-.7-3.3-.2-1-.3-2-.4-2.8-.1-.4-.1-.8-.1-1.2v-1.1-1.7c-.1-1-.1-1.5-.1-1.5z\" fill=#59ebff filter=url(#a)></path><animatetransform attributename=transform type=rotate from=\"0 50 50\" to=\"360 50 50\" repeatcount=indefinite dur=1s></animatetransform></svg></div><table><thead><th>Name</th><th>ID</th><th>Created</th><th>Actions</th></thead><tbody><tr v-for=\"(id, vault) in vaults\"><td>{{ vault.name }}</td><td>{{ id }}</td><td>{{ new Date(vault.meta.created) }}</td><td><a href=\"/vaults/{{ id }}\">Open vault</a> <button @click=removeVault(id)>Remove</button></td></tr></tbody></table><ul><li v-for=\"(id, vault) in vaults\"><a href=\"/vaults/{{ id }}\">{{ vault.name }}</a> - {{ id }}</li></ul>MAIN<br><button @click=createVault>create vault</button>"
+
+/***/ },
+/* 38 */
 /***/ function(module, exports) {
 
 	module.exports = "<button v-if=vaultOpen @click=lock>Lock this vault</button><h2>{{ vault.name }} <a href=#>Edit</a></h2><div style=\"color: #777;\">{{ vault.id }}</div><form v-if=!vault.hasPassword @submit.prevent=initializeVault(initPassword) style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is not set up yet. Please provide a password.</p><p>Please note that this password is only for you, it cannot be recovered by us, nor anyone else.</p><label>Password <input type=password v-model=initPassword></label> <button type=submit>Create this vault</button></form><form v-if=vaultLocked @submit.prevent=open style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is locked. Please provide your password to unlock it.</p><input type=password v-model=password> <button type=submit>Open this vault</button></form><form v-if=vaultOpen @submit=filter><input type=text v-model=filterText> <button type=submit>Search</button></form><div v-if=vaultOpen><ul><li v-for=\"secret in decryptedSecrets\">{{ secret.title }} {{ secret.username }} <button @click=copyToClipboard(secret)>Copy to clipboard</button> <button @click=reveal(secret)>Show password</button> <button @click=edit(secret)>Edit</button> <button @click=remove(secret)>Remove</button></li></ul><form v-if=vaultOpen @submit.prevent=add><h4>Add secret</h4><label for=new-secret-title>Title</label> <input type=text id=new-secret-title> <label for=new-secret-username>Username</label> <input type=text id=new-secret-username> <label for=new-secret-value>Password</label> <input type=passowrd id=new-secret-value> <button>Generate password</button> <button type=submit>Create secret</button></form></div>"
+
+/***/ },
+/* 39 */
+/***/ function(module, exports) {
+
+	module.exports = "<div style=\"text-align: center;\"><p>Please log in</p><button @click=\"login('Github')\">Log in with GitHub</button> <button @click=\"login('Google')\">Log in with Google</button></div>"
 
 /***/ }
 /******/ ]);
