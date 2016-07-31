@@ -19,7 +19,6 @@ const datastore = localforage.createInstance({ name: "brick-password-manager" })
 
 const app = {
     init() {
-        firebase.auth().onAuthStateChanged(user => console.log('User', user));
         firebase.auth().onAuthStateChanged(user => {
             // datastore.setItem('user', { uid: user.uid, photoURL: user.photoURL, displayName: user.displayName, email: user.email }).then(() => store.dispatch({ type: 'auth-state-changed', user }));
             store.dispatch({ type: 'auth-state-changed', user });
@@ -30,7 +29,6 @@ const app = {
         });
 
         store.subscribe(() => {
-            console.log('subscribe');
             const state = store.getState();
             datastore.setItem('user', state.user).then(() => console.log('succ')).catch(() => console.log('err'));
             // datastore.setItem('vaults', state.vaults);

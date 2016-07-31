@@ -56,25 +56,29 @@
 	
 	var _store2 = _interopRequireDefault(_store);
 	
-	var _firebase = __webpack_require__(18);
+	var _firebase = __webpack_require__(17);
 	
-	var _once = __webpack_require__(19);
+	var _once = __webpack_require__(18);
 	
 	var _once2 = _interopRequireDefault(_once);
 	
-	var _app = __webpack_require__(28);
+	var _app = __webpack_require__(27);
 	
 	var _app2 = _interopRequireDefault(_app);
 	
-	var _uuid = __webpack_require__(30);
+	var _uuid = __webpack_require__(29);
 	
 	var _uuid2 = _interopRequireDefault(_uuid);
 	
+	var _filters = __webpack_require__(30);
+	
+	var _filters2 = _interopRequireDefault(_filters);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var $ = __webpack_require__(31);
-	var Vue = __webpack_require__(32);
-	var page = __webpack_require__(33);
+	var $ = __webpack_require__(43);
+	var Vue = __webpack_require__(44);
+	var page = __webpack_require__(45);
 	// import once from 'lodash';
 	
 	var PASS = '123456';
@@ -82,7 +86,7 @@
 	
 	Vue.component('app-header', {
 	    replace: false,
-	    template: __webpack_require__(36),
+	    template: __webpack_require__(49),
 	
 	    data: function data() {
 	        return { user: null };
@@ -104,6 +108,13 @@
 	    }
 	});
 	
+	(0, _filters2.default)(Vue);
+	//
+	// console.log(document.hidden);
+	//  document.addEventListener('visibilitychange', e => {
+	//     console.log(document.hidden);
+	//  });
+	
 	// Screens:
 	// - create vault
 	// - edit vault
@@ -111,39 +122,80 @@
 	// - vault content (list of secrets)
 	// - edit secret / detail view
 	
+	Vue.component('loading-indicator', {
+	    replace: false,
+	    props: ['message'],
+	    template: __webpack_require__(50)
+	});
+	
 	Vue.component('app-main', {
 	    replace: false,
-	    template: __webpack_require__(37),
+	    template: __webpack_require__(51),
 	    data: function data() {
 	        return {
 	            vaults: {},
-	            vaultsLoading: false
+	            vaultsLoading: false,
+	            view: 'vault-list',
+	            history: []
 	        };
 	    },
 	    created: function created() {
 	        var _this2 = this;
 	
+	        page('/vaults', function (ctx, next) {
+	            _this2.view = 'vault-list';
+	        });
+	
+	        page('/vaults/new', function (ctx, next) {
+	            _this2.view = 'vault-create';
+	        });
+	
+	        page('/vaults/:id', function (ctx, next) {
+	            _this2.view = 'vault-details';
+	            _this2.currentVaultId = ctx.params.id;
+	        });
+	
+	        page({});
+	
 	        this.vaultsLoading = true;
 	        var uid = _firebase.firebase.auth().currentUser.uid;
-	        var dbref = _firebase.firebase.database().ref('users/' + uid + '/vaults-test');
+	        var dbref = _firebase.firebase.database().ref('users/' + uid + '/vaults-test').orderByChild('created');
 	        dbref.on('value', function (snap) {
-	            console.log(snap.val());
-	            _this2.vaults = snap.val();
+	            _this2.vaults = {};
+	            snap.forEach(function (o) {
+	                _this2.vaults[o.key] = o.val();
+	            });
 	            _this2.vaultsLoading = false;
 	        });
 	    },
 	
 	
 	    methods: {
+	        navigate: function navigate(path) {
+	            this.history.push(path);
+	            page(path);
+	        },
+	        goback: function goback() {
+	            this.history.pop();
+	            page(this.history[this.history.length - 1] || '/');
+	        },
 	        createVault: function createVault() {
+	            var _this3 = this;
+	
+	            var name = this.newVaultName;
 	            var uid = _firebase.firebase.auth().currentUser.uid;
 	            var id = (0, _uuid2.default)();
 	            var dbref = _firebase.firebase.database().ref('users/' + uid + '/vaults-test/' + id);
-	            dbref.set({ name: 'Test name', id: id, meta: { created: _firebase.firebase.database.ServerValue.TIMESTAMP }, secrets: [] }).then(function (x) {
+	            dbref.set({ name: name, id: id, created: _firebase.firebase.database.ServerValue.TIMESTAMP, secrets: [] }).then(function (x) {
 	                return console.log(x);
 	            }).catch(function (e) {
 	                return console.error(e);
+	            }).then(function () {
+	                return _this3.navigate('/vaults/' + id);
 	            });
+	        },
+	        cancelCreateVault: function cancelCreateVault() {
+	            this.view = '';
 	        },
 	        removeVault: function removeVault(id) {
 	            var uid = _firebase.firebase.auth().currentUser.uid;
@@ -155,7 +207,7 @@
 	
 	Vue.component('vault-view', {
 	    replace: false,
-	    template: __webpack_require__(38),
+	    template: __webpack_require__(52),
 	    props: ['vaultid'],
 	
 	    data: function data() {
@@ -182,11 +234,11 @@
 	
 	    computed: {
 	        vault: function vault() {
-	            var _this3 = this;
+	            var _this4 = this;
 	
 	            var state = _store2.default.getState();
 	            var f = state.vaults.filter(function (v) {
-	                return v.id === _this3.vaultid;
+	                return v.id === _this4.vaultid;
 	            });
 	            return f[0];
 	        },
@@ -214,7 +266,7 @@
 	
 	Vue.component('login-screen', {
 	    replace: false,
-	    template: __webpack_require__(39),
+	    template: __webpack_require__(53),
 	    methods: {
 	        login: function login(provider) {
 	            var authProvider = new _firebase.firebase.auth[provider + 'AuthProvider']();
@@ -238,18 +290,18 @@
 	    },
 	
 	    ready: function ready() {
-	        var _this4 = this;
+	        var _this5 = this;
 	
 	        _firebase.firebase.auth().getRedirectResult().catch(function (ex) {
 	            // todo: log exception to GA
 	        }).then(function () {
 	            _firebase.firebase.auth().onAuthStateChanged(function (user) {
-	                _this4.starting = false;
+	                _this5.starting = false;
 	
 	                if (user && user.uid) {
-	                    _this4.currentview = 'app-main';
+	                    _this5.currentview = 'app-main';
 	                } else {
-	                    _this4.currentview = 'login-screen';
+	                    _this5.currentview = 'login-screen';
 	                }
 	            });
 	        });
@@ -261,10 +313,10 @@
 	            return this.vaults[0] || { title: 'default' };
 	        },
 	        tabs: function tabs() {
-	            var _this5 = this;
+	            var _this6 = this;
 	
 	            var tabs = this.vaults.map(function (vault) {
-	                return { text: vault.name, href: '/vaults/' + vault.id, title: '', classes: _this5.currentVaultId === vault.id ? 'tab active' : 'tab' };
+	                return { text: vault.name, href: '/vaults/' + vault.id, title: '', classes: _this6.currentVaultId === vault.id ? 'tab active' : 'tab' };
 	            });
 	            tabs.push({ text: '+ New vault', href: '/vaults/new', title: '', classes: 'tab' });
 	            tabs.push({ text: 'Settings', href: '/vaults/settings', title: '', classes: 'tab' });
@@ -286,21 +338,6 @@
 	
 	    }
 	});
-	
-	page('/', function (ctx, next) {
-	    // console.log(ctx);
-	});
-	
-	page('/vaults/new', function (ctx, next) {
-	    console.log('new vault');
-	});
-	
-	page('/vaults/:id', function (ctx, next) {
-	    console.log('vaultid:', ctx.params.id);
-	    model.currentVaultId = ctx.params.id;
-	});
-	
-	page({});
 	
 	_store2.default.subscribe(function () {
 	    var state = _store2.default.getState();
@@ -692,32 +729,32 @@
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
+	'use strict';
 	
 	exports.__esModule = true;
 	exports.compose = exports.applyMiddleware = exports.bindActionCreators = exports.combineReducers = exports.createStore = undefined;
 	
-	var _createStore = __webpack_require__(6);
+	var _createStore = __webpack_require__(5);
 	
 	var _createStore2 = _interopRequireDefault(_createStore);
 	
-	var _combineReducers = __webpack_require__(13);
+	var _combineReducers = __webpack_require__(12);
 	
 	var _combineReducers2 = _interopRequireDefault(_combineReducers);
 	
-	var _bindActionCreators = __webpack_require__(15);
+	var _bindActionCreators = __webpack_require__(14);
 	
 	var _bindActionCreators2 = _interopRequireDefault(_bindActionCreators);
 	
-	var _applyMiddleware = __webpack_require__(16);
+	var _applyMiddleware = __webpack_require__(15);
 	
 	var _applyMiddleware2 = _interopRequireDefault(_applyMiddleware);
 	
-	var _compose = __webpack_require__(17);
+	var _compose = __webpack_require__(16);
 	
 	var _compose2 = _interopRequireDefault(_compose);
 	
-	var _warning = __webpack_require__(14);
+	var _warning = __webpack_require__(13);
 	
 	var _warning2 = _interopRequireDefault(_warning);
 	
@@ -729,7 +766,7 @@
 	*/
 	function isCrushed() {}
 	
-	if (process.env.NODE_ENV !== 'production' && typeof isCrushed.name === 'string' && isCrushed.name !== 'isCrushed') {
+	if (false) {
 	  (0, _warning2["default"])('You are currently using minified code outside of NODE_ENV === \'production\'. ' + 'This means that you are running a slower development build of Redux. ' + 'You can use loose-envify (https://github.com/zertosh/loose-envify) for browserify ' + 'or DefinePlugin for webpack (http://stackoverflow.com/questions/30030031) ' + 'to ensure you have the correct code for your production build.');
 	}
 	
@@ -738,135 +775,9 @@
 	exports.bindActionCreators = _bindActionCreators2["default"];
 	exports.applyMiddleware = _applyMiddleware2["default"];
 	exports.compose = _compose2["default"];
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
 /* 5 */
-/***/ function(module, exports) {
-
-	// shim for using process in browser
-	
-	var process = module.exports = {};
-	
-	// cached from whatever global is present so that test runners that stub it
-	// don't break things.  But we need to wrap it in a try catch in case it is
-	// wrapped in strict mode code which doesn't define any globals.  It's inside a
-	// function because try/catches deoptimize in certain engines.
-	
-	var cachedSetTimeout;
-	var cachedClearTimeout;
-	
-	(function () {
-	  try {
-	    cachedSetTimeout = setTimeout;
-	  } catch (e) {
-	    cachedSetTimeout = function () {
-	      throw new Error('setTimeout is not defined');
-	    }
-	  }
-	  try {
-	    cachedClearTimeout = clearTimeout;
-	  } catch (e) {
-	    cachedClearTimeout = function () {
-	      throw new Error('clearTimeout is not defined');
-	    }
-	  }
-	} ())
-	var queue = [];
-	var draining = false;
-	var currentQueue;
-	var queueIndex = -1;
-	
-	function cleanUpNextTick() {
-	    if (!draining || !currentQueue) {
-	        return;
-	    }
-	    draining = false;
-	    if (currentQueue.length) {
-	        queue = currentQueue.concat(queue);
-	    } else {
-	        queueIndex = -1;
-	    }
-	    if (queue.length) {
-	        drainQueue();
-	    }
-	}
-	
-	function drainQueue() {
-	    if (draining) {
-	        return;
-	    }
-	    var timeout = cachedSetTimeout(cleanUpNextTick);
-	    draining = true;
-	
-	    var len = queue.length;
-	    while(len) {
-	        currentQueue = queue;
-	        queue = [];
-	        while (++queueIndex < len) {
-	            if (currentQueue) {
-	                currentQueue[queueIndex].run();
-	            }
-	        }
-	        queueIndex = -1;
-	        len = queue.length;
-	    }
-	    currentQueue = null;
-	    draining = false;
-	    cachedClearTimeout(timeout);
-	}
-	
-	process.nextTick = function (fun) {
-	    var args = new Array(arguments.length - 1);
-	    if (arguments.length > 1) {
-	        for (var i = 1; i < arguments.length; i++) {
-	            args[i - 1] = arguments[i];
-	        }
-	    }
-	    queue.push(new Item(fun, args));
-	    if (queue.length === 1 && !draining) {
-	        cachedSetTimeout(drainQueue, 0);
-	    }
-	};
-	
-	// v8 likes predictible objects
-	function Item(fun, array) {
-	    this.fun = fun;
-	    this.array = array;
-	}
-	Item.prototype.run = function () {
-	    this.fun.apply(null, this.array);
-	};
-	process.title = 'browser';
-	process.browser = true;
-	process.env = {};
-	process.argv = [];
-	process.version = ''; // empty string to avoid regexp issues
-	process.versions = {};
-	
-	function noop() {}
-	
-	process.on = noop;
-	process.addListener = noop;
-	process.once = noop;
-	process.off = noop;
-	process.removeListener = noop;
-	process.removeAllListeners = noop;
-	process.emit = noop;
-	
-	process.binding = function (name) {
-	    throw new Error('process.binding is not supported');
-	};
-	
-	process.cwd = function () { return '/' };
-	process.chdir = function (dir) {
-	    throw new Error('process.chdir is not supported');
-	};
-	process.umask = function() { return 0; };
-
-
-/***/ },
-/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -875,11 +786,11 @@
 	exports.ActionTypes = undefined;
 	exports["default"] = createStore;
 	
-	var _isPlainObject = __webpack_require__(7);
+	var _isPlainObject = __webpack_require__(6);
 	
 	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
 	
-	var _symbolObservable = __webpack_require__(11);
+	var _symbolObservable = __webpack_require__(10);
 	
 	var _symbolObservable2 = _interopRequireDefault(_symbolObservable);
 	
@@ -1133,12 +1044,12 @@
 	}
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var getPrototype = __webpack_require__(8),
-	    isHostObject = __webpack_require__(9),
-	    isObjectLike = __webpack_require__(10);
+	var getPrototype = __webpack_require__(7),
+	    isHostObject = __webpack_require__(8),
+	    isObjectLike = __webpack_require__(9);
 	
 	/** `Object#toString` result references. */
 	var objectTag = '[object Object]';
@@ -1209,7 +1120,7 @@
 
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports) {
 
 	/* Built-in method references for those with the same name as other `lodash` methods. */
@@ -1230,7 +1141,7 @@
 
 
 /***/ },
-/* 9 */
+/* 8 */
 /***/ function(module, exports) {
 
 	/**
@@ -1256,7 +1167,7 @@
 
 
 /***/ },
-/* 10 */
+/* 9 */
 /***/ function(module, exports) {
 
 	/**
@@ -1291,18 +1202,18 @@
 
 
 /***/ },
-/* 11 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {/* global window */
 	'use strict';
 	
-	module.exports = __webpack_require__(12)(global || window || this);
+	module.exports = __webpack_require__(11)(global || window || this);
 	
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 12 */
+/* 11 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1327,21 +1238,21 @@
 
 
 /***/ },
-/* 13 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
+	'use strict';
 	
 	exports.__esModule = true;
 	exports["default"] = combineReducers;
 	
-	var _createStore = __webpack_require__(6);
+	var _createStore = __webpack_require__(5);
 	
-	var _isPlainObject = __webpack_require__(7);
+	var _isPlainObject = __webpack_require__(6);
 	
 	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
 	
-	var _warning = __webpack_require__(14);
+	var _warning = __webpack_require__(13);
 	
 	var _warning2 = _interopRequireDefault(_warning);
 	
@@ -1433,7 +1344,7 @@
 	      throw sanityError;
 	    }
 	
-	    if (process.env.NODE_ENV !== 'production') {
+	    if (false) {
 	      var warningMessage = getUnexpectedStateShapeWarningMessage(state, finalReducers, action);
 	      if (warningMessage) {
 	        (0, _warning2["default"])(warningMessage);
@@ -1457,10 +1368,9 @@
 	    return hasChanged ? nextState : state;
 	  };
 	}
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 14 */
+/* 13 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1490,7 +1400,7 @@
 	}
 
 /***/ },
-/* 15 */
+/* 14 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1546,7 +1456,7 @@
 	}
 
 /***/ },
-/* 16 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1557,7 +1467,7 @@
 	
 	exports["default"] = applyMiddleware;
 	
-	var _compose = __webpack_require__(17);
+	var _compose = __webpack_require__(16);
 	
 	var _compose2 = _interopRequireDefault(_compose);
 	
@@ -1609,7 +1519,7 @@
 	}
 
 /***/ },
-/* 17 */
+/* 16 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1654,7 +1564,7 @@
 	}
 
 /***/ },
-/* 18 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -1728,10 +1638,10 @@
 	exports.upsertVault = upsertVault;
 
 /***/ },
-/* 19 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var before = __webpack_require__(20);
+	var before = __webpack_require__(19);
 	
 	/**
 	 * Creates a function that is restricted to invoking `func` once. Repeat calls
@@ -1759,10 +1669,10 @@
 
 
 /***/ },
-/* 20 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var toInteger = __webpack_require__(21);
+	var toInteger = __webpack_require__(20);
 	
 	/** Used as the `TypeError` message for "Functions" methods. */
 	var FUNC_ERROR_TEXT = 'Expected a function';
@@ -1805,10 +1715,10 @@
 
 
 /***/ },
-/* 21 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var toFinite = __webpack_require__(22);
+	var toFinite = __webpack_require__(21);
 	
 	/**
 	 * Converts `value` to an integer.
@@ -1847,10 +1757,10 @@
 
 
 /***/ },
-/* 22 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var toNumber = __webpack_require__(23);
+	var toNumber = __webpack_require__(22);
 	
 	/** Used as references for various `Number` constants. */
 	var INFINITY = 1 / 0,
@@ -1895,12 +1805,12 @@
 
 
 /***/ },
-/* 23 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isFunction = __webpack_require__(24),
-	    isObject = __webpack_require__(25),
-	    isSymbol = __webpack_require__(26);
+	var isFunction = __webpack_require__(23),
+	    isObject = __webpack_require__(24),
+	    isSymbol = __webpack_require__(25);
 	
 	/** Used as references for various `Number` constants. */
 	var NAN = 0 / 0;
@@ -1968,10 +1878,10 @@
 
 
 /***/ },
-/* 24 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isObject = __webpack_require__(25);
+	var isObject = __webpack_require__(24);
 	
 	/** `Object#toString` result references. */
 	var funcTag = '[object Function]',
@@ -2016,7 +1926,7 @@
 
 
 /***/ },
-/* 25 */
+/* 24 */
 /***/ function(module, exports) {
 
 	/**
@@ -2053,10 +1963,10 @@
 
 
 /***/ },
-/* 26 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isObjectLike = __webpack_require__(27);
+	var isObjectLike = __webpack_require__(26);
 	
 	/** `Object#toString` result references. */
 	var symbolTag = '[object Symbol]';
@@ -2097,7 +2007,7 @@
 
 
 /***/ },
-/* 27 */
+/* 26 */
 /***/ function(module, exports) {
 
 	/**
@@ -2132,7 +2042,7 @@
 
 
 /***/ },
-/* 28 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2143,9 +2053,9 @@
 	
 	var _redux = __webpack_require__(4);
 	
-	var _firebase = __webpack_require__(18);
+	var _firebase = __webpack_require__(17);
 	
-	var _localforage = __webpack_require__(29);
+	var _localforage = __webpack_require__(28);
 	
 	var _localforage2 = _interopRequireDefault(_localforage);
 	
@@ -2170,9 +2080,6 @@
 	var app = {
 	    init: function init() {
 	        _firebase.firebase.auth().onAuthStateChanged(function (user) {
-	            return console.log('User', user);
-	        });
-	        _firebase.firebase.auth().onAuthStateChanged(function (user) {
 	            // datastore.setItem('user', { uid: user.uid, photoURL: user.photoURL, displayName: user.displayName, email: user.email }).then(() => store.dispatch({ type: 'auth-state-changed', user }));
 	            _store2.default.dispatch({ type: 'auth-state-changed', user: user });
 	            //
@@ -2182,7 +2089,6 @@
 	        });
 	
 	        _store2.default.subscribe(function () {
-	            console.log('subscribe');
 	            var state = _store2.default.getState();
 	            datastore.setItem('user', state.user).then(function () {
 	                return console.log('succ');
@@ -2231,7 +2137,7 @@
 	exports.default = app;
 
 /***/ },
-/* 29 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var require;var require;/* WEBPACK VAR INJECTION */(function(global) {/*!
@@ -4533,7 +4439,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 30 */
+/* 29 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -4553,7 +4459,1027 @@
 	exports.default = uuid;
 
 /***/ },
+/* 30 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _format = __webpack_require__(31);
+	
+	var _format2 = _interopRequireDefault(_format);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var register = function register(Vue) {
+	    Vue.filter('formatDate', function (date) {
+	        return (0, _format2.default)(date, 'YYYY-MM-DD HH:mm:ss');
+	    });
+	};
+	
+	exports.default = register;
+
+/***/ },
 /* 31 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var getDayOfYear = __webpack_require__(32)
+	var getISOWeek = __webpack_require__(38)
+	var getISOYear = __webpack_require__(42)
+	var parse = __webpack_require__(33)
+	
+	/**
+	 * @category Common Helpers
+	 * @summary Format the date.
+	 *
+	 * @description
+	 * Return the formatted date string in the given format.
+	 *
+	 * Accepted tokens:
+	 * | Unit                    | Token | Result examples                  |
+	 * |-------------------------|-------|----------------------------------|
+	 * | Month                   | M     | 1, 2, ..., 12                    |
+	 * |                         | Mo    | 1st, 2nd, ..., 12th              |
+	 * |                         | MM    | 01, 02, ..., 12                  |
+	 * |                         | MMM   | Jan, Feb, ..., Dec               |
+	 * |                         | MMMM  | January, February, ..., December |
+	 * | Quarter                 | Q     | 1, 2, 3, 4                       |
+	 * |                         | Qo    | 1st, 2nd, 3rd, 4th               |
+	 * | Day of month            | D     | 1, 2, ..., 31                    |
+	 * |                         | Do    | 1st, 2nd, ..., 31st              |
+	 * |                         | DD    | 01, 02, ..., 31                  |
+	 * | Day of year             | DDD   | 1, 2, ..., 366                   |
+	 * |                         | DDDo  | 1st, 2nd, ..., 366th             |
+	 * |                         | DDDD  | 001, 002, ..., 366               |
+	 * | Day of week             | d     | 0, 1, ..., 6                     |
+	 * |                         | do    | 0th, 1st, ..., 6th               |
+	 * |                         | dd    | Su, Mo, ..., Sa                  |
+	 * |                         | ddd   | Sun, Mon, ..., Sat               |
+	 * |                         | dddd  | Sunday, Monday, ..., Saturday    |
+	 * | Day of ISO week         | E     | 1, 2, ..., 7                     |
+	 * | ISO week                | W     | 1, 2, ..., 53                    |
+	 * |                         | Wo    | 1st, 2nd, ..., 53rd              |
+	 * |                         | WW    | 01, 02, ..., 53                  |
+	 * | Year                    | YY    | 00, 01, ..., 99                  |
+	 * |                         | YYYY  | 1900, 1901, ..., 2099            |
+	 * | ISO week-numbering year | GG    | 00, 01, ..., 99                  |
+	 * |                         | GGGG  | 1900, 1901, ..., 2099            |
+	 * | AM/PM                   | A     | AM, PM                           |
+	 * |                         | a     | am, pm                           |
+	 * |                         | aa    | a.m., p.m.                       |
+	 * | Hour                    | H     | 0, 1, ... 23                     |
+	 * |                         | HH    | 00, 01, ... 23                   |
+	 * |                         | h     | 1, 2, ..., 12                    |
+	 * |                         | hh    | 01, 02, ..., 12                  |
+	 * | Minute                  | m     | 0, 1, ..., 59                    |
+	 * |                         | mm    | 00, 01, ..., 59                  |
+	 * | Second                  | s     | 0, 1, ..., 59                    |
+	 * |                         | ss    | 00, 01, ..., 59                  |
+	 * | 1/10 of second          | S     | 0, 1, ..., 9                     |
+	 * | 1/100 of second         | SS    | 00, 01, ..., 99                  |
+	 * | Millisecond             | SSS   | 000, 001, ..., 999               |
+	 * | Timezone                | Z     | -01:00, +00:00, ... +12:00       |
+	 * |                         | ZZ    | -0100, +0000, ..., +1200         |
+	 * | Seconds timestamp       | X     | 512969520                        |
+	 * | Milliseconds timestamp  | x     | 512969520900                     |
+	 *
+	 * @param {Date|String|Number} date - the original date
+	 * @param {String} [format='YYYY-MM-DDTHH:mm:ss.SSSZ'] - the string of tokens
+	 * @returns {String} the formatted date string
+	 *
+	 * @example
+	 * // Represent 11 February 2014 in middle-endian format:
+	 * var result = format(
+	 *   new Date(2014, 1, 11),
+	 *   'MM/DD/YYYY'
+	 * )
+	 * //=> '02/11/2014'
+	 */
+	function format (dirtyDate, format) {
+	  var date = parse(dirtyDate)
+	
+	  if (!format) {
+	    format = 'YYYY-MM-DDTHH:mm:ss.SSSZ'
+	  }
+	
+	  var formatFunction = makeFormatFunction(format)
+	  return formatFunction(date)
+	}
+	
+	var formats = {
+	  // Month: 1, 2, ..., 12
+	  'M': function () {
+	    return this.getMonth() + 1
+	  },
+	
+	  // Month: 01, 02, ..., 12
+	  'MM': function () {
+	    return addLeadingZeros(this.getMonth() + 1, 2)
+	  },
+	
+	  // Month: Jan, Feb, ..., Dec
+	  'MMM': function () {
+	    return locale.monthsShort[this.getMonth()]
+	  },
+	
+	  // Month: January, February, ..., December
+	  'MMMM': function () {
+	    return locale.months[this.getMonth()]
+	  },
+	
+	  // Quarter: 1, 2, 3, 4
+	  'Q': function () {
+	    return Math.ceil((this.getMonth() + 1) / 3)
+	  },
+	
+	  // Day of month: 1, 2, ..., 31
+	  'D': function () {
+	    return this.getDate()
+	  },
+	
+	  // Day of month: 01, 02, ..., 31
+	  'DD': function () {
+	    return addLeadingZeros(this.getDate(), 2)
+	  },
+	
+	  // Day of year: 1, 2, ..., 366
+	  'DDD': function () {
+	    return getDayOfYear(this)
+	  },
+	
+	  // Day of year: 001, 002, ..., 366
+	  'DDDD': function () {
+	    return addLeadingZeros(getDayOfYear(this), 3)
+	  },
+	
+	  // Day of week: 0, 1, ..., 6
+	  'd': function () {
+	    return this.getDay()
+	  },
+	
+	  // Day of week: Su, Mo, ..., Sa
+	  'dd': function () {
+	    return locale.dayNamesMin[this.getDay()]
+	  },
+	
+	  // Day of week: Sun, Mon, ..., Sat
+	  'ddd': function () {
+	    return locale.dayNamesShort[this.getDay()]
+	  },
+	
+	  // Day of week: Sunday, Monday, ..., Saturday
+	  'dddd': function () {
+	    return locale.dayNames[this.getDay()]
+	  },
+	
+	  // Day of ISO week: 1, 2, ..., 7
+	  'E': function () {
+	    return this.getDay() || 7
+	  },
+	
+	  // ISO week: 1, 2, ..., 53
+	  'W': function () {
+	    return getISOWeek(this)
+	  },
+	
+	  // ISO week: 01, 02, ..., 53
+	  'WW': function () {
+	    return addLeadingZeros(getISOWeek(this), 2)
+	  },
+	
+	  // Year: 00, 01, ..., 99
+	  'YY': function () {
+	    return String(this.getFullYear()).substr(2)
+	  },
+	
+	  // Year: 1900, 1901, ..., 2099
+	  'YYYY': function () {
+	    return this.getFullYear()
+	  },
+	
+	  // ISO week-numbering year: 00, 01, ..., 99
+	  'GG': function () {
+	    return String(getISOYear(this)).substr(2)
+	  },
+	
+	  // ISO week-numbering year: 1900, 1901, ..., 2099
+	  'GGGG': function () {
+	    return getISOYear(this)
+	  },
+	
+	  // AM, PM
+	  'A': function () {
+	    return (this.getHours() / 12) >= 1 ? 'PM' : 'AM'
+	  },
+	
+	  // am, pm
+	  'a': function () {
+	    return (this.getHours() / 12) >= 1 ? 'pm' : 'am'
+	  },
+	
+	  // a.m., p.m.
+	  'aa': function () {
+	    return (this.getHours() / 12) >= 1 ? 'p.m.' : 'a.m.'
+	  },
+	
+	  // Hour: 0, 1, ... 23
+	  'H': function () {
+	    return this.getHours()
+	  },
+	
+	  // Hour: 00, 01, ..., 23
+	  'HH': function () {
+	    return addLeadingZeros(this.getHours(), 2)
+	  },
+	
+	  // Hour: 1, 2, ..., 12
+	  'h': function () {
+	    var hours = this.getHours()
+	    if (hours === 0) {
+	      return 12
+	    } else if (hours > 12) {
+	      return hours % 12
+	    } else {
+	      return hours
+	    }
+	  },
+	
+	  // Hour: 01, 02, ..., 12
+	  'hh': function () {
+	    return addLeadingZeros(formats['h'].apply(this), 2)
+	  },
+	
+	  // Minute: 0, 1, ..., 59
+	  'm': function () {
+	    return this.getMinutes()
+	  },
+	
+	  // Minute: 00, 01, ..., 59
+	  'mm': function () {
+	    return addLeadingZeros(this.getMinutes(), 2)
+	  },
+	
+	  // Second: 0, 1, ..., 59
+	  's': function () {
+	    return this.getSeconds()
+	  },
+	
+	  // Second: 00, 01, ..., 59
+	  'ss': function () {
+	    return addLeadingZeros(this.getSeconds(), 2)
+	  },
+	
+	  // 1/10 of second: 0, 1, ..., 9
+	  'S': function () {
+	    return Math.floor(this.getMilliseconds() / 100)
+	  },
+	
+	  // 1/100 of second: 00, 01, ..., 99
+	  'SS': function () {
+	    return Math.floor(this.getMilliseconds() / 10)
+	  },
+	
+	  // Millisecond: 000, 001, ..., 999
+	  'SSS': function () {
+	    return this.getMilliseconds()
+	  },
+	
+	  // Timezone: -01:00, +00:00, ... +12:00
+	  'Z': function () {
+	    return formatTimezone(this.getTimezoneOffset(), ':')
+	  },
+	
+	  // Timezone: -0100, +0000, ... +1200
+	  'ZZ': function () {
+	    return formatTimezone(this.getTimezoneOffset())
+	  },
+	
+	  // Seconds timestamp: 512969520
+	  'X': function () {
+	    return Math.floor(this.getTime() / 1000)
+	  },
+	
+	  // Milliseconds timestamp: 512969520900
+	  'x': function () {
+	    return this.getTime()
+	  }
+	}
+	
+	var ordinalFunctions = ['M', 'D', 'DDD', 'd', 'Q', 'W']
+	ordinalFunctions.forEach(function (functionName) {
+	  formats[functionName + 'o'] = function () {
+	    return locale.ordinal(formats[functionName].apply(this))
+	  }
+	})
+	
+	var formattingTokens = Object.keys(formats).sort().reverse()
+	var formattingTokensRegexp = new RegExp(
+	  '(\\[[^\\[]*\\])|(\\\\)?' + '(' + formattingTokens.join('|') + '|.)', 'g'
+	)
+	
+	function makeFormatFunction (format) {
+	  var array = format.match(formattingTokensRegexp)
+	  var length = array.length
+	
+	  for (var i = 0; i < length; i++) {
+	    if (formats[array[i]]) {
+	      array[i] = formats[array[i]]
+	    } else {
+	      array[i] = removeFormattingTokens(array[i])
+	    }
+	  }
+	
+	  return function (mom) {
+	    var output = ''
+	    for (var i = 0; i < length; i++) {
+	      if (array[i] instanceof Function) {
+	        output += array[i].call(mom, format)
+	      } else {
+	        output += array[i]
+	      }
+	    }
+	    return output
+	  }
+	}
+	
+	function removeFormattingTokens (input) {
+	  if (input.match(/\[[\s\S]/)) {
+	    return input.replace(/^\[|\]$/g, '')
+	  }
+	  return input.replace(/\\/g, '')
+	}
+	
+	function addLeadingZeros (number, targetLength) {
+	  var output = String(Math.abs(number))
+	
+	  while (output.length < targetLength) {
+	    output = '0' + output
+	  }
+	  return output
+	}
+	
+	function formatTimezone (offset, delimeter) {
+	  delimeter = delimeter || ''
+	  var sign = offset > 0 ? '-' : '+'
+	  var absOffset = Math.abs(offset)
+	  var hours = Math.floor(absOffset / 60)
+	  var minutes = absOffset % 60
+	  return sign + addLeadingZeros(hours, 2) + delimeter + addLeadingZeros(minutes, 2)
+	}
+	
+	var locale = {
+	  ordinal: function (number) {
+	    if (number > 20 || number < 10) {
+	      switch (number % 10) {
+	        case 1:
+	          return number + 'st'
+	        case 2:
+	          return number + 'nd'
+	        case 3:
+	          return number + 'rd'
+	      }
+	    }
+	    return number + 'th'
+	  },
+	  months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+	  monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+	  dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+	  dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+	  dayNamesMin: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+	}
+	
+	module.exports = format
+
+
+/***/ },
+/* 32 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var parse = __webpack_require__(33)
+	var startOfYear = __webpack_require__(35)
+	var differenceInCalendarDays = __webpack_require__(36)
+	
+	/**
+	 * @category Day Helpers
+	 * @summary Get the day of the year of the given date.
+	 *
+	 * @description
+	 * Get the day of the year of the given date.
+	 *
+	 * @param {Date|String|Number} date - the given date
+	 * @returns {Number} the day of year
+	 *
+	 * @example
+	 * // Which day of the year is 2 July 2014?
+	 * var result = getDayOfYear(new Date(2014, 6, 2))
+	 * //=> 183
+	 */
+	function getDayOfYear (dirtyDate) {
+	  var date = parse(dirtyDate)
+	  var diff = differenceInCalendarDays(date, startOfYear(date))
+	  var dayOfYear = diff + 1
+	  return dayOfYear
+	}
+	
+	module.exports = getDayOfYear
+
+
+/***/ },
+/* 33 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var isDate = __webpack_require__(34)
+	
+	var MILLISECONDS_IN_HOUR = 3600000
+	var MILLISECONDS_IN_MINUTE = 60000
+	
+	var parseTokenDateTimeDelimeter = /[T ]/
+	var parseTokenPlainTime = /:/
+	
+	// date tokens
+	var parseTokenYYYY = /^(\d{4})-?/
+	var parseTokenYYYYY = /^([+-]\d{4,6})-/
+	var parseTokenMM = /^-(\d{2})$/
+	var parseTokenDDD = /^-?(\d{3})$/
+	var parseTokenMMDD = /^-?(\d{2})-?(\d{2})$/
+	var parseTokenWww = /^-?W(\d{2})$/
+	var parseTokenWwwD = /^-?W(\d{2})-?(\d{1})$/
+	
+	// time tokens
+	var parseTokenHH = /^(\d{2}([.,]\d*)?)$/
+	var parseTokenHHMM = /^(\d{2}):?(\d{2}([.,]\d*)?)$/
+	var parseTokenHHMMSS = /^(\d{2}):?(\d{2}):?(\d{2}([.,]\d*)?)$/
+	
+	// timezone tokens
+	var parseTokenTimezone = /([Z+-].*)$/
+	var parseTokenTimezoneZ = /^(Z)$/
+	var parseTokenTimezoneHH = /^([+-])(\d{2})$/
+	var parseTokenTimezoneHHMM = /^([+-])(\d{2}):?(\d{2})$/
+	
+	/**
+	 * @category Common Helpers
+	 * @summary Parse the ISO-8601-formatted date.
+	 *
+	 * @description
+	 * Parse the date string representation.
+	 * It accepts the ISO 8601 format as well as a partial implementation.
+	 *
+	 * ISO 8601: http://en.wikipedia.org/wiki/ISO_8601
+	 *
+	 * @param {String} dateString - the ISO 8601 formatted string to parse
+	 * @returns {Date} the parsed date in the local time zone
+	 *
+	 * @example
+	 * // Parse string '2014-02-11T11:30:30':
+	 * var result = parse('2014-02-11T11:30:30')
+	 * //=> Tue Feb 11 2014 11:30:30
+	 */
+	function parse (dateString) {
+	  if (isDate(dateString)) {
+	    // Prevent the date to lose the milliseconds when passed to new Date() in IE10
+	    return new Date(dateString.getTime())
+	  } else if (typeof dateString !== 'string') {
+	    return new Date(dateString)
+	  }
+	
+	  var dateStrings = splitDateString(dateString)
+	
+	  var date = parseDate(dateStrings.date)
+	
+	  if (date) {
+	    var timestamp = date.getTime()
+	    var time = 0
+	    var offset
+	
+	    if (dateStrings.time) {
+	      time = parseTime(dateStrings.time)
+	    }
+	
+	    if (dateStrings.timezone) {
+	      offset = parseTimezone(dateStrings.timezone)
+	    } else {
+	      // get offset accurate to hour in timezones that change offset
+	      offset = new Date(timestamp + time).getTimezoneOffset()
+	      offset = new Date(timestamp + time + offset * MILLISECONDS_IN_MINUTE).getTimezoneOffset()
+	    }
+	
+	    return new Date(timestamp + time + offset * MILLISECONDS_IN_MINUTE)
+	  } else {
+	    return new Date(dateString)
+	  }
+	}
+	
+	function splitDateString (dateString) {
+	  var dateStrings = {}
+	  var array = dateString.split(parseTokenDateTimeDelimeter)
+	  var timeString
+	
+	  if (parseTokenPlainTime.test(array[0])) {
+	    dateStrings.date = null
+	    timeString = array[0]
+	  } else {
+	    dateStrings.date = array[0]
+	    timeString = array[1]
+	  }
+	
+	  if (timeString) {
+	    var token = parseTokenTimezone.exec(timeString)
+	    if (token) {
+	      dateStrings.time = timeString.replace(token[1], '')
+	      dateStrings.timezone = token[1]
+	    } else {
+	      dateStrings.time = timeString
+	    }
+	  }
+	
+	  return dateStrings
+	}
+	
+	function parseDate (dateString) {
+	  var year
+	  var yearToken
+	
+	  // YYYY or ±YYYYY
+	  yearToken = parseTokenYYYY.exec(dateString) ||
+	    parseTokenYYYYY.exec(dateString)
+	  if (yearToken) {
+	    var yearString = yearToken[1]
+	    year = parseInt(yearString, 10)
+	    dateString = dateString.slice(yearString.length)
+	
+	  // Invalid ISO-formatted year
+	  } else {
+	    return null
+	  }
+	
+	  var token
+	  var date
+	  var month
+	  var week
+	
+	  // YYYY
+	  if (dateString.length === 0) {
+	    date = new Date(0)
+	    date.setUTCFullYear(year)
+	    return date
+	  }
+	
+	  // YYYY-MM
+	  token = parseTokenMM.exec(dateString)
+	  if (token) {
+	    date = new Date(0)
+	    month = parseInt(token[1], 10) - 1
+	    date.setUTCFullYear(year, month)
+	    return date
+	  }
+	
+	  // YYYY-DDD or YYYYDDD
+	  token = parseTokenDDD.exec(dateString)
+	  if (token) {
+	    date = new Date(0)
+	    var dayOfYear = parseInt(token[1], 10)
+	    date.setUTCFullYear(year, 0, dayOfYear)
+	    return date
+	  }
+	
+	  // YYYY-MM-DD or YYYYMMDD
+	  token = parseTokenMMDD.exec(dateString)
+	  if (token) {
+	    date = new Date(0)
+	    month = parseInt(token[1], 10) - 1
+	    var day = parseInt(token[2], 10)
+	    date.setUTCFullYear(year, month, day)
+	    return date
+	  }
+	
+	  // YYYY-Www or YYYYWww
+	  token = parseTokenWww.exec(dateString)
+	  if (token) {
+	    week = parseInt(token[1], 10) - 1
+	    return dayOfISOYear(year, week)
+	  }
+	
+	  // YYYY-Www-D or YYYYWwwD
+	  token = parseTokenWwwD.exec(dateString)
+	  if (token) {
+	    week = parseInt(token[1], 10) - 1
+	    var dayOfWeek = parseInt(token[2], 10) - 1
+	    return dayOfISOYear(year, week, dayOfWeek)
+	  }
+	
+	  // Invalid ISO-formatted date
+	  return null
+	}
+	
+	function parseTime (timeString) {
+	  var token
+	  var hours
+	  var minutes
+	
+	  // hh
+	  token = parseTokenHH.exec(timeString)
+	  if (token) {
+	    hours = parseFloat(token[1].replace(',', '.'))
+	    return (hours % 24) * MILLISECONDS_IN_HOUR
+	  }
+	
+	  // hh:mm or hhmm
+	  token = parseTokenHHMM.exec(timeString)
+	  if (token) {
+	    hours = parseInt(token[1], 10)
+	    minutes = parseFloat(token[2].replace(',', '.'))
+	    return (hours % 24) * MILLISECONDS_IN_HOUR +
+	      minutes * MILLISECONDS_IN_MINUTE
+	  }
+	
+	  // hh:mm:ss or hhmmss
+	  token = parseTokenHHMMSS.exec(timeString)
+	  if (token) {
+	    hours = parseInt(token[1], 10)
+	    minutes = parseInt(token[2], 10)
+	    var seconds = parseFloat(token[3].replace(',', '.'))
+	    return (hours % 24) * MILLISECONDS_IN_HOUR +
+	      minutes * MILLISECONDS_IN_MINUTE +
+	      seconds * 1000
+	  }
+	
+	  // Invalid ISO-formatted time
+	  return null
+	}
+	
+	function parseTimezone (timezoneString) {
+	  var token
+	  var absoluteOffset
+	
+	  // Z
+	  token = parseTokenTimezoneZ.exec(timezoneString)
+	  if (token) {
+	    return 0
+	  }
+	
+	  // ±hh
+	  token = parseTokenTimezoneHH.exec(timezoneString)
+	  if (token) {
+	    absoluteOffset = parseInt(token[2], 10) * 60
+	    return (token[1] === '+') ? -absoluteOffset : absoluteOffset
+	  }
+	
+	  // ±hh:mm or ±hhmm
+	  token = parseTokenTimezoneHHMM.exec(timezoneString)
+	  if (token) {
+	    absoluteOffset = parseInt(token[2], 10) * 60 + parseInt(token[3], 10)
+	    return (token[1] === '+') ? -absoluteOffset : absoluteOffset
+	  }
+	
+	  return 0
+	}
+	
+	function dayOfISOYear (isoYear, week, day) {
+	  week = week || 0
+	  day = day || 0
+	  var date = new Date(0)
+	  date.setUTCFullYear(isoYear, 0, 4)
+	  var diff = week * 7 + day + 1 - date.getUTCDay()
+	  date.setUTCDate(date.getUTCDate() + diff)
+	  return date
+	}
+	
+	module.exports = parse
+
+
+/***/ },
+/* 34 */
+/***/ function(module, exports) {
+
+	/**
+	 * @category Common Helpers
+	 * @summary Is the given argument an instance of Date?
+	 *
+	 * @description
+	 * Is the given argument an instance of Date?
+	 *
+	 * @param {*} argument - the argument to check
+	 * @returns {Boolean} the given argument is an instance of Date
+	 *
+	 * @example
+	 * // Is 'mayonnaise' a Date?
+	 * var result = isDate('mayonnaise')
+	 * //=> false
+	 */
+	function isDate (argument) {
+	  return argument instanceof Date
+	}
+	
+	module.exports = isDate
+
+
+/***/ },
+/* 35 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var parse = __webpack_require__(33)
+	
+	/**
+	 * @category Year Helpers
+	 * @summary Return the start of a year for the given date.
+	 *
+	 * @description
+	 * Return the start of a year for the given date.
+	 * The result will be in the local timezone.
+	 *
+	 * @param {Date|String|Number} date - the original date
+	 * @returns {Date} the start of a year
+	 *
+	 * @example
+	 * // The start of a year for 2 September 2014 11:55:00:
+	 * var result = startOfYear(new Date(2014, 8, 2, 11, 55, 00))
+	 * //=> Wed Jan 01 2014 00:00:00
+	 */
+	function startOfYear (dirtyDate) {
+	  var cleanDate = parse(dirtyDate)
+	  var date = new Date(cleanDate.getFullYear(), 0, 1, 0, 0, 0, 0)
+	  return date
+	}
+	
+	module.exports = startOfYear
+
+
+/***/ },
+/* 36 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var startOfDay = __webpack_require__(37)
+	
+	var MILLISECONDS_IN_MINUTE = 60000
+	var MILLISECONDS_IN_DAY = 86400000
+	
+	/**
+	 * @category Day Helpers
+	 * @summary Get the number of calendar days between the given dates.
+	 *
+	 * @description
+	 * Get the number of calendar days between the given dates.
+	 *
+	 * @param {Date|String|Number} dateLeft - the later date
+	 * @param {Date|String|Number} dateRight - the earlier date
+	 * @returns {Number} the number of calendar days
+	 *
+	 * @example
+	 * // How many calendar days are between
+	 * // 2 July 2011 23:00:00 and 2 July 2012 00:00:00?
+	 * var result = differenceInCalendarDays(
+	 *   new Date(2012, 6, 2, 0, 0),
+	 *   new Date(2011, 6, 2, 23, 0)
+	 * )
+	 * //=> 366
+	 */
+	function differenceInCalendarDays (dirtyDateLeft, dirtyDateRight) {
+	  var startOfDayLeft = startOfDay(dirtyDateLeft)
+	  var startOfDayRight = startOfDay(dirtyDateRight)
+	
+	  var timestampLeft = startOfDayLeft.getTime() -
+	    startOfDayLeft.getTimezoneOffset() * MILLISECONDS_IN_MINUTE
+	  var timestampRight = startOfDayRight.getTime() -
+	    startOfDayRight.getTimezoneOffset() * MILLISECONDS_IN_MINUTE
+	
+	  // Round the number of days to the nearest integer
+	  // because the number of milliseconds in a day is not constant
+	  // (e.g. it's different in the day of the daylight saving time clock shift)
+	  return Math.round((timestampLeft - timestampRight) / MILLISECONDS_IN_DAY)
+	}
+	
+	module.exports = differenceInCalendarDays
+
+
+/***/ },
+/* 37 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var parse = __webpack_require__(33)
+	
+	/**
+	 * @category Day Helpers
+	 * @summary Return the start of a day for the given date.
+	 *
+	 * @description
+	 * Return the start of a day for the given date.
+	 * The result will be in the local timezone.
+	 *
+	 * @param {Date|String|Number} date - the original date
+	 * @returns {Date} the start of a day
+	 *
+	 * @example
+	 * // The start of a day for 2 September 2014 11:55:00:
+	 * var result = startOfDay(new Date(2014, 8, 2, 11, 55, 0))
+	 * //=> Tue Sep 02 2014 00:00:00
+	 */
+	function startOfDay (dirtyDate) {
+	  var date = parse(dirtyDate)
+	  date.setHours(0, 0, 0, 0)
+	  return date
+	}
+	
+	module.exports = startOfDay
+
+
+/***/ },
+/* 38 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var parse = __webpack_require__(33)
+	var startOfISOWeek = __webpack_require__(39)
+	var startOfISOYear = __webpack_require__(41)
+	
+	var MILLISECONDS_IN_WEEK = 604800000
+	
+	/**
+	 * @category ISO Week Helpers
+	 * @summary Get the ISO week of the given date.
+	 *
+	 * @description
+	 * Get the ISO week of the given date.
+	 *
+	 * ISO week-numbering year: http://en.wikipedia.org/wiki/ISO_week_date
+	 *
+	 * @param {Date|String|Number} date - the given date
+	 * @returns {Number} the ISO week
+	 *
+	 * @example
+	 * // Which week of the ISO-week numbering year is 2 January 2005?
+	 * var result = getISOWeek(new Date(2005, 0, 2))
+	 * //=> 53
+	 */
+	function getISOWeek (dirtyDate) {
+	  var date = parse(dirtyDate)
+	  var diff = startOfISOWeek(date).getTime() - startOfISOYear(date).getTime()
+	
+	  // Round the number of days to the nearest integer
+	  // because the number of milliseconds in a week is not constant
+	  // (e.g. it's different in the week of the daylight saving time clock shift)
+	  return Math.round(diff / MILLISECONDS_IN_WEEK) + 1
+	}
+	
+	module.exports = getISOWeek
+
+
+/***/ },
+/* 39 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var startOfWeek = __webpack_require__(40)
+	
+	/**
+	 * @category ISO Week Helpers
+	 * @summary Return the start of an ISO week for the given date.
+	 *
+	 * @description
+	 * Return the start of an ISO week for the given date.
+	 * The result will be in the local timezone.
+	 *
+	 * ISO week-numbering year: http://en.wikipedia.org/wiki/ISO_week_date
+	 *
+	 * @param {Date|String|Number} date - the original date
+	 * @returns {Date} the start of an ISO week
+	 *
+	 * @example
+	 * // The start of an ISO week for 2 September 2014 11:55:00:
+	 * var result = startOfISOWeek(new Date(2014, 8, 2, 11, 55, 0))
+	 * //=> Mon Sep 01 2014 00:00:00
+	 */
+	function startOfISOWeek (dirtyDate) {
+	  return startOfWeek(dirtyDate, {weekStartsOn: 1})
+	}
+	
+	module.exports = startOfISOWeek
+
+
+/***/ },
+/* 40 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var parse = __webpack_require__(33)
+	
+	/**
+	 * @category Week Helpers
+	 * @summary Return the start of a week for the given date.
+	 *
+	 * @description
+	 * Return the start of a week for the given date.
+	 * The result will be in the local timezone.
+	 *
+	 * @param {Date|String|Number} date - the original date
+	 * @param {Object} [options] - the object with options
+	 * @param {Number} [options.weekStartsOn=0] - the index of the first day of the week (0 - Sunday)
+	 * @returns {Date} the start of a week
+	 *
+	 * @example
+	 * // The start of a week for 2 September 2014 11:55:00:
+	 * var result = startOfWeek(new Date(2014, 8, 2, 11, 55, 0))
+	 * //=> Sun Aug 31 2014 00:00:00
+	 *
+	 * @example
+	 * // If week starts at Monday, the start of a week for 2 September 2014 11:55:00:
+	 * var result = startOfWeek(new Date(2014, 8, 2, 11, 55, 0), {weekStartsOn: 1})
+	 * //=> Mon Sep 01 2014 00:00:00
+	 */
+	function startOfWeek (dirtyDate, options) {
+	  var weekStartsOn = options ? (options.weekStartsOn || 0) : 0
+	
+	  var date = parse(dirtyDate)
+	  var day = date.getDay()
+	  var diff = (day < weekStartsOn ? 7 : 0) + day - weekStartsOn
+	
+	  date.setDate(date.getDate() - diff)
+	  date.setHours(0, 0, 0, 0)
+	  return date
+	}
+	
+	module.exports = startOfWeek
+
+
+/***/ },
+/* 41 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var getISOYear = __webpack_require__(42)
+	var startOfISOWeek = __webpack_require__(39)
+	
+	/**
+	 * @category ISO Week-Numbering Year Helpers
+	 * @summary Return the start of an ISO week-numbering year for the given date.
+	 *
+	 * @description
+	 * Return the start of an ISO week-numbering year,
+	 * which always starts 3 days before the year's first Thursday.
+	 * The result will be in the local timezone.
+	 *
+	 * ISO week-numbering year: http://en.wikipedia.org/wiki/ISO_week_date
+	 *
+	 * @param {Date|String|Number} date - the original date
+	 * @returns {Date} the start of an ISO year
+	 *
+	 * @example
+	 * // The start of an ISO week-numbering year for 2 July 2005:
+	 * var result = startOfISOYear(new Date(2005, 6, 2))
+	 * //=> Mon Jan 03 2005 00:00:00
+	 */
+	function startOfISOYear (dirtyDate) {
+	  var year = getISOYear(dirtyDate)
+	  var date = startOfISOWeek(new Date(year, 0, 4))
+	  return date
+	}
+	
+	module.exports = startOfISOYear
+
+
+/***/ },
+/* 42 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var parse = __webpack_require__(33)
+	var startOfISOWeek = __webpack_require__(39)
+	
+	/**
+	 * @category ISO Week-Numbering Year Helpers
+	 * @summary Get the ISO week-numbering year of the given date.
+	 *
+	 * @description
+	 * Get the ISO week-numbering year of the given date,
+	 * which always starts 3 days before the year's first Thursday.
+	 *
+	 * ISO week-numbering year: http://en.wikipedia.org/wiki/ISO_week_date
+	 *
+	 * @param {Date|String|Number} date - the given date
+	 * @returns {Number} the ISO week-numbering year
+	 *
+	 * @example
+	 * // Which ISO-week numbering year is 2 January 2005?
+	 * var result = getISOYear(new Date(2005, 0, 2))
+	 * //=> 2004
+	 */
+	function getISOYear (dirtyDate) {
+	  var date = parse(dirtyDate)
+	  var year = date.getFullYear()
+	  var startOfNextYear = startOfISOWeek(new Date(year + 1, 0, 4))
+	  var startOfThisYear = startOfISOWeek(new Date(year, 0, 4))
+	
+	  if (date.getTime() >= startOfNextYear.getTime()) {
+	    return year + 1
+	  } else if (date.getTime() >= startOfThisYear.getTime()) {
+	    return year
+	  } else {
+	    return year - 1
+	  }
+	}
+	
+	module.exports = getISOYear
+
+
+/***/ },
+/* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;"use strict";
@@ -5428,10 +6354,10 @@
 	});
 
 /***/ },
-/* 32 */
+/* 44 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global, process) {/*!
+	/* WEBPACK VAR INJECTION */(function(global) {/*!
 	 * Vue.js v1.0.26
 	 * (c) 2016 Evan You
 	 * Released under the MIT License.
@@ -6374,7 +7300,7 @@
 	   * Disabled by default in production builds.
 	   */
 	
-	  devtools: process.env.NODE_ENV !== 'production',
+	  devtools: ("production") !== 'production',
 	
 	  /**
 	   * Internal flag to indicate the delimiters have been
@@ -6443,7 +7369,7 @@
 	var warn = undefined;
 	var formatComponentName = undefined;
 	
-	if (process.env.NODE_ENV !== 'production') {
+	if (false) {
 	  (function () {
 	    var hasConsole = typeof console !== 'undefined';
 	
@@ -6555,7 +7481,7 @@
 	    var selector = el;
 	    el = document.querySelector(el);
 	    if (!el) {
-	      process.env.NODE_ENV !== 'production' && warn('Cannot find element: ' + selector);
+	      ("production") !== 'production' && warn('Cannot find element: ' + selector);
 	    }
 	  }
 	  return el;
@@ -6980,7 +7906,7 @@
 	var reservedTagRE = /^(slot|partial|component)$/i;
 	
 	var isUnknownElement = undefined;
-	if (process.env.NODE_ENV !== 'production') {
+	if (false) {
 	  isUnknownElement = function (el, tag) {
 	    if (tag.indexOf('-') > -1) {
 	      // http://stackoverflow.com/a/28210364/1070244
@@ -7015,7 +7941,7 @@
 	      var is = hasAttrs && getIsBinding(el, options);
 	      if (is) {
 	        return is;
-	      } else if (process.env.NODE_ENV !== 'production') {
+	      } else if (false) {
 	        var expectedTag = options._componentNameMap && options._componentNameMap[tag];
 	        if (expectedTag) {
 	          warn('Unknown custom element: <' + tag + '> - ' + 'did you mean <' + expectedTag + '>? ' + 'HTML is case-insensitive, remember to use kebab-case in templates.');
@@ -7096,7 +8022,7 @@
 	      return parentVal;
 	    }
 	    if (typeof childVal !== 'function') {
-	      process.env.NODE_ENV !== 'production' && warn('The "data" option should be a function ' + 'that returns a per-instance value in component ' + 'definitions.', vm);
+	      ("production") !== 'production' && warn('The "data" option should be a function ' + 'that returns a per-instance value in component ' + 'definitions.', vm);
 	      return parentVal;
 	    }
 	    if (!parentVal) {
@@ -7130,7 +8056,7 @@
 	
 	strats.el = function (parentVal, childVal, vm) {
 	  if (!vm && childVal && typeof childVal !== 'function') {
-	    process.env.NODE_ENV !== 'production' && warn('The "el" option should be a function ' + 'that returns a per-instance value in component ' + 'definitions.', vm);
+	    ("production") !== 'production' && warn('The "el" option should be a function ' + 'that returns a per-instance value in component ' + 'definitions.', vm);
 	    return;
 	  }
 	  var ret = childVal || parentVal;
@@ -7219,18 +8145,18 @@
 	    var components = options.components = guardArrayAssets(options.components);
 	    var ids = Object.keys(components);
 	    var def;
-	    if (process.env.NODE_ENV !== 'production') {
+	    if (false) {
 	      var map = options._componentNameMap = {};
 	    }
 	    for (var i = 0, l = ids.length; i < l; i++) {
 	      var key = ids[i];
 	      if (commonTagRE.test(key) || reservedTagRE.test(key)) {
-	        process.env.NODE_ENV !== 'production' && warn('Do not use built-in or reserved HTML elements as component ' + 'id: ' + key);
+	        ("production") !== 'production' && warn('Do not use built-in or reserved HTML elements as component ' + 'id: ' + key);
 	        continue;
 	      }
 	      // record a all lowercase <-> kebab-case mapping for
 	      // possible custom element case error warning
-	      if (process.env.NODE_ENV !== 'production') {
+	      if (false) {
 	        map[key.replace(/-/g, '').toLowerCase()] = hyphenate(key);
 	      }
 	      def = components[key];
@@ -7291,7 +8217,7 @@
 	      asset = assets[i];
 	      var id = typeof asset === 'function' ? asset.options && asset.options.name || asset.id : asset.name || asset.id;
 	      if (!id) {
-	        process.env.NODE_ENV !== 'production' && warn('Array-syntax assets must provide a "name" or "id" field.');
+	        ("production") !== 'production' && warn('Array-syntax assets must provide a "name" or "id" field.');
 	      } else {
 	        res[id] = asset;
 	      }
@@ -7314,7 +8240,7 @@
 	function mergeOptions(parent, child, vm) {
 	  guardComponents(child);
 	  guardProps(child);
-	  if (process.env.NODE_ENV !== 'production') {
+	  if (false) {
 	    if (child.propsData && !vm) {
 	      warn('propsData can only be used as an instantiation option.');
 	    }
@@ -7370,7 +8296,7 @@
 	  assets[camelizedId = camelize(id)] ||
 	  // Pascal Case ID
 	  assets[camelizedId.charAt(0).toUpperCase() + camelizedId.slice(1)];
-	  if (process.env.NODE_ENV !== 'production' && warnMissing && !res) {
+	  if (false) {
 	    warn('Failed to resolve ' + type.slice(0, -1) + ': ' + id, options);
 	  }
 	  return res;
@@ -8175,7 +9101,7 @@
 	 */
 	
 	var warnNonExistent;
-	if (process.env.NODE_ENV !== 'production') {
+	if (false) {
 	  warnNonExistent = function (path, vm) {
 	    warn('You are setting a non-existent path "' + path.raw + '" ' + 'on a vm instance. Consider pre-initializing the property ' + 'with the "data" option for more reliable reactivity ' + 'and better performance.', vm);
 	  };
@@ -8208,7 +9134,7 @@
 	      obj = obj[key];
 	      if (!isObject(obj)) {
 	        obj = {};
-	        if (process.env.NODE_ENV !== 'production' && last._isVue) {
+	        if (false) {
 	          warnNonExistent(path, last);
 	        }
 	        set(last, key, obj);
@@ -8219,7 +9145,7 @@
 	      } else if (key in obj) {
 	        obj[key] = val;
 	      } else {
-	        if (process.env.NODE_ENV !== 'production' && obj._isVue) {
+	        if (false) {
 	          warnNonExistent(path, obj);
 	        }
 	        set(obj, key, val);
@@ -8327,7 +9253,7 @@
 	
 	function compileGetter(exp) {
 	  if (improperKeywordsRE.test(exp)) {
-	    process.env.NODE_ENV !== 'production' && warn('Avoid using reserved keywords in expression: ' + exp);
+	    ("production") !== 'production' && warn('Avoid using reserved keywords in expression: ' + exp);
 	  }
 	  // reset state
 	  saved.length = 0;
@@ -8355,7 +9281,7 @@
 	    return new Function('scope', 'return ' + body + ';');
 	    /* eslint-enable no-new-func */
 	  } catch (e) {
-	    if (process.env.NODE_ENV !== 'production') {
+	    if (false) {
 	      /* istanbul ignore if */
 	      if (e.toString().match(/unsafe-eval|CSP/)) {
 	        warn('It seems you are using the default build of Vue.js in an environment ' + 'with Content Security Policy that prohibits unsafe-eval. ' + 'Use the CSP-compliant build instead: ' + 'http://vuejs.org/guide/installation.html#CSP-compliant-build');
@@ -8381,7 +9307,7 @@
 	      setPath(scope, path, val);
 	    };
 	  } else {
-	    process.env.NODE_ENV !== 'production' && warn('Invalid setter expression: ' + exp);
+	    ("production") !== 'production' && warn('Invalid setter expression: ' + exp);
 	  }
 	}
 	
@@ -8503,7 +9429,7 @@
 	    has[id] = null;
 	    watcher.run();
 	    // in dev build, check and stop circular updates.
-	    if (process.env.NODE_ENV !== 'production' && has[id] != null) {
+	    if (false) {
 	      circular[id] = (circular[id] || 0) + 1;
 	      if (circular[id] > config._maxUpdateCount) {
 	        warn('You may have an infinite update loop for watcher ' + 'with expression "' + watcher.expression + '"', watcher.vm);
@@ -8605,7 +9531,7 @@
 	  try {
 	    value = this.getter.call(scope, scope);
 	  } catch (e) {
-	    if (process.env.NODE_ENV !== 'production' && config.warnExpressionErrors) {
+	    if (false) {
 	      warn('Error when evaluating expression ' + '"' + this.expression + '": ' + e.toString(), this.vm);
 	    }
 	  }
@@ -8641,7 +9567,7 @@
 	  try {
 	    this.setter.call(scope, scope, value);
 	  } catch (e) {
-	    if (process.env.NODE_ENV !== 'production' && config.warnExpressionErrors) {
+	    if (false) {
 	      warn('Error when evaluating setter ' + '"' + this.expression + '": ' + e.toString(), this.vm);
 	    }
 	  }
@@ -8649,7 +9575,7 @@
 	  var forContext = scope.$forContext;
 	  if (forContext && forContext.alias === this.expression) {
 	    if (forContext.filters) {
-	      process.env.NODE_ENV !== 'production' && warn('It seems you are using two-way binding on ' + 'a v-for alias (' + this.expression + '), and the ' + 'v-for has filters. This will not work properly. ' + 'Either remove the filters or use an array of ' + 'objects and bind to object properties instead.', this.vm);
+	      ("production") !== 'production' && warn('It seems you are using two-way binding on ' + 'a v-for alias (' + this.expression + '), and the ' + 'v-for has filters. This will not work properly. ' + 'Either remove the filters or use an array of ' + 'objects and bind to object properties instead.', this.vm);
 	      return;
 	    }
 	    forContext._withLock(function () {
@@ -8730,7 +9656,7 @@
 	    this.queued = true;
 	    // record before-push error stack in debug mode
 	    /* istanbul ignore if */
-	    if (process.env.NODE_ENV !== 'production' && config.debug) {
+	    if (false) {
 	      this.prevError = new Error('[vue] async stack trace');
 	    }
 	    pushWatcher(this);
@@ -8759,7 +9685,7 @@
 	      // so the full cross-tick stack trace is available.
 	      var prevError = this.prevError;
 	      /* istanbul ignore if */
-	      if (process.env.NODE_ENV !== 'production' && config.debug && prevError) {
+	      if (false) {
 	        this.prevError = null;
 	        try {
 	          this.cb.call(this.vm, value, oldValue);
@@ -9442,7 +10368,7 @@
 	    }
 	
 	    if (!this.alias) {
-	      process.env.NODE_ENV !== 'production' && warn('Invalid v-for expression "' + this.descriptor.raw + '": ' + 'alias is required.', this.vm);
+	      ("production") !== 'production' && warn('Invalid v-for expression "' + this.descriptor.raw + '": ' + 'alias is required.', this.vm);
 	      return;
 	    }
 	
@@ -9796,7 +10722,7 @@
 	      if (!cache[id]) {
 	        cache[id] = frag;
 	      } else if (trackByKey !== '$index') {
-	        process.env.NODE_ENV !== 'production' && this.warnDuplicate(value);
+	        ("production") !== 'production' && this.warnDuplicate(value);
 	      }
 	    } else {
 	      id = this.id;
@@ -9804,11 +10730,11 @@
 	        if (value[id] === null) {
 	          value[id] = frag;
 	        } else {
-	          process.env.NODE_ENV !== 'production' && this.warnDuplicate(value);
+	          ("production") !== 'production' && this.warnDuplicate(value);
 	        }
 	      } else if (Object.isExtensible(value)) {
 	        def(value, id, frag);
-	      } else if (process.env.NODE_ENV !== 'production') {
+	      } else if (false) {
 	        warn('Frozen v-for objects cannot be automatically tracked, make sure to ' + 'provide a track-by key.');
 	      }
 	    }
@@ -9835,7 +10761,7 @@
 	      frag = value[this.id];
 	    }
 	    if (frag && (frag.reused || frag.fresh)) {
-	      process.env.NODE_ENV !== 'production' && this.warnDuplicate(value);
+	      ("production") !== 'production' && this.warnDuplicate(value);
 	    }
 	    return frag;
 	  },
@@ -10019,7 +10945,7 @@
 	  return trackByKey ? trackByKey === '$index' ? index : trackByKey.charAt(0).match(/\w/) ? getPath(value, trackByKey) : value[trackByKey] : key || value;
 	}
 	
-	if (process.env.NODE_ENV !== 'production') {
+	if (false) {
 	  vFor.warnDuplicate = function (value) {
 	    warn('Duplicate value found in v-for="' + this.descriptor.raw + '": ' + JSON.stringify(value) + '. Use track-by="$index" if ' + 'you are expecting duplicate values.', this.vm);
 	  };
@@ -10043,7 +10969,7 @@
 	      this.anchor = createAnchor('v-if');
 	      replace(el, this.anchor);
 	    } else {
-	      process.env.NODE_ENV !== 'production' && warn('v-if="' + this.expression + '" cannot be ' + 'used on an instance root element.', this.vm);
+	      ("production") !== 'production' && warn('v-if="' + this.expression + '" cannot be ' + 'used on an instance root element.', this.vm);
 	      this.invalid = true;
 	    }
 	  },
@@ -10486,7 +11412,7 @@
 	    // friendly warning...
 	    this.checkFilters();
 	    if (this.hasRead && !this.hasWrite) {
-	      process.env.NODE_ENV !== 'production' && warn('It seems you are using a read-only filter with ' + 'v-model="' + this.descriptor.raw + '". ' + 'You might want to use a two-way filter to ensure correct behavior.', this.vm);
+	      ("production") !== 'production' && warn('It seems you are using a read-only filter with ' + 'v-model="' + this.descriptor.raw + '". ' + 'You might want to use a two-way filter to ensure correct behavior.', this.vm);
 	    }
 	    var el = this.el;
 	    var tag = el.tagName;
@@ -10498,7 +11424,7 @@
 	    } else if (tag === 'TEXTAREA') {
 	      handler = handlers.text;
 	    } else {
-	      process.env.NODE_ENV !== 'production' && warn('v-model does not support element type: ' + tag, this.vm);
+	      ("production") !== 'production' && warn('v-model does not support element type: ' + tag, this.vm);
 	      return;
 	    }
 	    el.__v_model = this;
@@ -10614,7 +11540,7 @@
 	    }
 	
 	    if (typeof handler !== 'function') {
-	      process.env.NODE_ENV !== 'production' && warn('v-on:' + this.arg + '="' + this.expression + '" expects a function value, ' + 'got ' + handler, this.vm);
+	      ("production") !== 'production' && warn('v-on:' + this.arg + '="' + this.expression + '" expects a function value, ' + 'got ' + handler, this.vm);
 	      return;
 	    }
 	
@@ -10708,7 +11634,7 @@
 	      var isImportant = importantRE.test(value) ? 'important' : '';
 	      if (isImportant) {
 	        /* istanbul ignore if */
-	        if (process.env.NODE_ENV !== 'production') {
+	        if (false) {
 	          warn('It\'s probably a bad idea to use !important with inline rules. ' + 'This feature will be deprecated in a future version of Vue.');
 	        }
 	        value = value.replace(importantRE, '').trim();
@@ -10819,13 +11745,13 @@
 	
 	      // only allow binding on native attributes
 	      if (disallowedInterpAttrRE.test(attr) || attr === 'name' && (tag === 'PARTIAL' || tag === 'SLOT')) {
-	        process.env.NODE_ENV !== 'production' && warn(attr + '="' + descriptor.raw + '": ' + 'attribute interpolation is not allowed in Vue.js ' + 'directives and special attributes.', this.vm);
+	        ("production") !== 'production' && warn(attr + '="' + descriptor.raw + '": ' + 'attribute interpolation is not allowed in Vue.js ' + 'directives and special attributes.', this.vm);
 	        this.el.removeAttribute(attr);
 	        this.invalid = true;
 	      }
 	
 	      /* istanbul ignore if */
-	      if (process.env.NODE_ENV !== 'production') {
+	      if (false) {
 	        var raw = attr + '="' + descriptor.raw + '": ';
 	        // warn src
 	        if (attr === 'src') {
@@ -10934,7 +11860,7 @@
 	
 	var ref = {
 	  bind: function bind() {
-	    process.env.NODE_ENV !== 'production' && warn('v-ref:' + this.arg + ' must be used on a child ' + 'component. Found on <' + this.el.tagName.toLowerCase() + '>.', this.vm);
+	    ("production") !== 'production' && warn('v-ref:' + this.arg + ' must be used on a child ' + 'component. Found on <' + this.el.tagName.toLowerCase() + '>.', this.vm);
 	  }
 	};
 	
@@ -11108,7 +12034,7 @@
 	        this.setComponent(this.expression);
 	      }
 	    } else {
-	      process.env.NODE_ENV !== 'production' && warn('cannot mount component "' + this.expression + '" ' + 'on already mounted element: ' + this.el);
+	      ("production") !== 'production' && warn('cannot mount component "' + this.expression + '" ' + 'on already mounted element: ' + this.el);
 	    }
 	  },
 	
@@ -11272,7 +12198,7 @@
 	        this.cache[this.Component.cid] = child;
 	      }
 	      /* istanbul ignore if */
-	      if (process.env.NODE_ENV !== 'production' && this.el.hasAttribute('transition') && child._isFragment) {
+	      if (false) {
 	        warn('Transitions will not work on a fragment instance. ' + 'Template: ' + child.$options.template, child);
 	      }
 	      return child;
@@ -11445,7 +12371,7 @@
 	    name = names[i];
 	    options = propOptions[name] || empty;
 	
-	    if (process.env.NODE_ENV !== 'production' && name === '$data') {
+	    if (false) {
 	      warn('Do not use $data as prop.', vm);
 	      continue;
 	    }
@@ -11455,7 +12381,7 @@
 	    // so we need to camelize the path here
 	    path = camelize(name);
 	    if (!identRE$1.test(path)) {
-	      process.env.NODE_ENV !== 'production' && warn('Invalid prop key: "' + name + '". Prop keys ' + 'must be valid identifiers.', vm);
+	      ("production") !== 'production' && warn('Invalid prop key: "' + name + '". Prop keys ' + 'must be valid identifiers.', vm);
 	      continue;
 	    }
 	
@@ -11491,7 +12417,7 @@
 	      } else {
 	        prop.dynamic = true;
 	        // check non-settable path for two-way bindings
-	        if (process.env.NODE_ENV !== 'production' && prop.mode === propBindingModes.TWO_WAY && !settablePathRE.test(value)) {
+	        if (false) {
 	          prop.mode = propBindingModes.ONE_WAY;
 	          warn('Cannot bind two-way prop with non-settable ' + 'parent path: ' + value, vm);
 	        }
@@ -11499,13 +12425,13 @@
 	      prop.parentPath = value;
 	
 	      // warn required two-way
-	      if (process.env.NODE_ENV !== 'production' && options.twoWay && prop.mode !== propBindingModes.TWO_WAY) {
+	      if (false) {
 	        warn('Prop "' + name + '" expects a two-way binding type.', vm);
 	      }
 	    } else if ((value = getAttr(el, attr)) !== null) {
 	      // has literal binding!
 	      prop.raw = value;
-	    } else if (process.env.NODE_ENV !== 'production') {
+	    } else if (false) {
 	      // check possible camelCase prop usage
 	      var lowerCaseName = path.toLowerCase();
 	      value = /[A-Z\-]/.test(name) && (el.getAttribute(lowerCaseName) || el.getAttribute(':' + lowerCaseName) || el.getAttribute('v-bind:' + lowerCaseName) || el.getAttribute(':' + lowerCaseName + '.once') || el.getAttribute('v-bind:' + lowerCaseName + '.once') || el.getAttribute(':' + lowerCaseName + '.sync') || el.getAttribute('v-bind:' + lowerCaseName + '.sync'));
@@ -11660,7 +12586,7 @@
 	  var def = options['default'];
 	  // warn against non-factory defaults for Object & Array
 	  if (isObject(def)) {
-	    process.env.NODE_ENV !== 'production' && warn('Invalid default value for prop "' + prop.name + '": ' + 'Props with type Object/Array must use a factory function ' + 'to return the default value.', vm);
+	    ("production") !== 'production' && warn('Invalid default value for prop "' + prop.name + '": ' + 'Props with type Object/Array must use a factory function ' + 'to return the default value.', vm);
 	  }
 	  // call factory function for non-Function types
 	  return typeof def === 'function' && options.type !== Function ? def.call(vm) : def;
@@ -11696,7 +12622,7 @@
 	    }
 	  }
 	  if (!valid) {
-	    if (process.env.NODE_ENV !== 'production') {
+	    if (false) {
 	      warn('Invalid prop: type check failed for prop "' + prop.name + '".' + ' Expected ' + expectedTypes.map(formatType).join(', ') + ', got ' + formatValue(value) + '.', vm);
 	    }
 	    return false;
@@ -11704,7 +12630,7 @@
 	  var validator = options.validator;
 	  if (validator) {
 	    if (!validator(value)) {
-	      process.env.NODE_ENV !== 'production' && warn('Invalid prop: custom validator check failed for prop "' + prop.name + '".', vm);
+	      ("production") !== 'production' && warn('Invalid prop: custom validator check failed for prop "' + prop.name + '".', vm);
 	      return false;
 	    }
 	  }
@@ -11727,7 +12653,7 @@
 	  if (typeof coerce === 'function') {
 	    return coerce(value);
 	  } else {
-	    process.env.NODE_ENV !== 'production' && warn('Invalid coerce for prop "' + prop.name + '": expected function, got ' + typeof coerce + '.', vm);
+	    ("production") !== 'production' && warn('Invalid coerce for prop "' + prop.name + '": expected function, got ' + typeof coerce + '.', vm);
 	    return value;
 	  }
 	}
@@ -11934,7 +12860,7 @@
 	  // check css transition type
 	  this.type = hooks && hooks.type;
 	  /* istanbul ignore if */
-	  if (process.env.NODE_ENV !== 'production') {
+	  if (false) {
 	    if (this.type && this.type !== TYPE_TRANSITION && this.type !== TYPE_ANIMATION) {
 	      warn('invalid CSS transition type for transition="' + this.id + '": ' + this.type, vm);
 	    }
@@ -12345,7 +13271,7 @@
 	
 	function linkAndCapture(linker, vm) {
 	  /* istanbul ignore if */
-	  if (process.env.NODE_ENV === 'production') {
+	  if (true) {
 	    // reset directives before every capture in production
 	    // mode, so that when unlinking we don't need to splice
 	    // them out (which turns out to be a perf hit).
@@ -12415,7 +13341,7 @@
 	  var i = dirs.length;
 	  while (i--) {
 	    dirs[i]._teardown();
-	    if (process.env.NODE_ENV !== 'production' && !destroying) {
+	    if (false) {
 	      vm._directives.$remove(dirs[i]);
 	    }
 	  }
@@ -12477,7 +13403,7 @@
 	      // non-component, just compile as a normal element.
 	      replacerLinkFn = compileDirectives(el.attributes, options);
 	    }
-	  } else if (process.env.NODE_ENV !== 'production' && containerAttrs) {
+	  } else if (false) {
 	    // warn container directives for fragment instances
 	    var names = containerAttrs.filter(function (attr) {
 	      // allow vue-loader/vueify scoped css attributes
@@ -12919,7 +13845,7 @@
 	      arg = name;
 	      pushDir('bind', directives.bind, tokens);
 	      // warn against mixing mustaches with v-bind
-	      if (process.env.NODE_ENV !== 'production') {
+	      if (false) {
 	        if (name === 'class' && Array.prototype.some.call(attrs, function (attr) {
 	          return attr.name === ':class' || attr.name === 'v-bind:class';
 	        })) {
@@ -13120,7 +14046,7 @@
 	    if (options.replace) {
 	      /* istanbul ignore if */
 	      if (el === document.body) {
-	        process.env.NODE_ENV !== 'production' && warn('You are mounting an instance with a template to ' + '<body>. This will replace <body> entirely. You ' + 'should probably use `replace: false` here.');
+	        ("production") !== 'production' && warn('You are mounting an instance with a template to ' + '<body>. This will replace <body> entirely. You ' + 'should probably use `replace: false` here.');
 	      }
 	      // there are many cases where the instance must
 	      // become a fragment instance: basically anything that
@@ -13149,7 +14075,7 @@
 	      return el;
 	    }
 	  } else {
-	    process.env.NODE_ENV !== 'production' && warn('Invalid template option: ' + template);
+	    ("production") !== 'production' && warn('Invalid template option: ' + template);
 	  }
 	}
 	
@@ -13216,7 +14142,7 @@
 	      (contents[name] || (contents[name] = [])).push(el);
 	    }
 	    /* eslint-enable no-cond-assign */
-	    if (process.env.NODE_ENV !== 'production' && getBindAttr(el, 'slot')) {
+	    if (false) {
 	      warn('The "slot" attribute must be static.', vm.$parent);
 	    }
 	  }
@@ -13306,7 +14232,7 @@
 	    var el = options.el;
 	    var props = options.props;
 	    if (props && !el) {
-	      process.env.NODE_ENV !== 'production' && warn('Props will not be compiled if no `el` option is ' + 'provided at instantiation.', this);
+	      ("production") !== 'production' && warn('Props will not be compiled if no `el` option is ' + 'provided at instantiation.', this);
 	    }
 	    // make sure to convert string selectors into element now
 	    el = options.el = query(el);
@@ -13324,7 +14250,7 @@
 	    var data = this._data = dataFn ? dataFn() : {};
 	    if (!isPlainObject(data)) {
 	      data = {};
-	      process.env.NODE_ENV !== 'production' && warn('data functions should return an object.', this);
+	      ("production") !== 'production' && warn('data functions should return an object.', this);
 	    }
 	    var props = this._props;
 	    // proxy data on instance
@@ -13339,7 +14265,7 @@
 	      //    template prop present
 	      if (!props || !hasOwn(props, key)) {
 	        this._proxy(key);
-	      } else if (process.env.NODE_ENV !== 'production') {
+	      } else if (false) {
 	        warn('Data field "' + key + '" is already defined ' + 'as a prop. To provide default value for a prop, use the "default" ' + 'prop option; if you want to pass prop values to an instantiation ' + 'call, use the "propsData" option.', this);
 	      }
 	    }
@@ -13592,7 +14518,7 @@
 	      if (method) {
 	        vm[action](key, method, options);
 	      } else {
-	        process.env.NODE_ENV !== 'production' && warn('Unknown method: "' + handler + '" when ' + 'registering callback for ' + action + ': "' + key + '".', vm);
+	        ("production") !== 'production' && warn('Unknown method: "' + handler + '" when ' + 'registering callback for ' + action + ': "' + key + '".', vm);
 	      }
 	    } else if (handler && type === 'object') {
 	      register(vm, action, key, handler.handler, handler);
@@ -13720,7 +14646,7 @@
 	  this._scope = scope;
 	  this._frag = frag;
 	  // store directives on node in dev mode
-	  if (process.env.NODE_ENV !== 'production' && this.el) {
+	  if (false) {
 	    this.el._vue_directives = this.el._vue_directives || [];
 	    this.el._vue_directives.push(this);
 	  }
@@ -13898,7 +14824,7 @@
 	    this._withLock(function () {
 	      this._watcher.set(value);
 	    });
-	  } else if (process.env.NODE_ENV !== 'production') {
+	  } else if (false) {
 	    warn('Directive.set() can only be used inside twoWay' + 'directives.');
 	  }
 	};
@@ -13961,7 +14887,7 @@
 	        unwatchFns[i]();
 	      }
 	    }
-	    if (process.env.NODE_ENV !== 'production' && this.el) {
+	    if (false) {
 	      this.el._vue_directives.$remove(this);
 	    }
 	    this.vm = this.el = this._watcher = this._listeners = null;
@@ -14294,7 +15220,7 @@
 	            cbs[i](res);
 	          }
 	        }, function reject(reason) {
-	          process.env.NODE_ENV !== 'production' && warn('Failed to resolve async component' + (typeof value === 'string' ? ': ' + value : '') + '. ' + (reason ? '\nReason: ' + reason : ''));
+	          ("production") !== 'production' && warn('Failed to resolve async component' + (typeof value === 'string' ? ': ' + value : '') + '. ' + (reason ? '\nReason: ' + reason : ''));
 	        });
 	      }
 	    } else {
@@ -14869,7 +15795,7 @@
 	
 	  Vue.prototype.$mount = function (el) {
 	    if (this._isCompiled) {
-	      process.env.NODE_ENV !== 'production' && warn('$mount() should be called only once.', this);
+	      ("production") !== 'production' && warn('$mount() should be called only once.', this);
 	      return;
 	    }
 	    el = query(el);
@@ -15376,7 +16302,7 @@
 	      return extendOptions._Ctor;
 	    }
 	    var name = extendOptions.name || Super.options.name;
-	    if (process.env.NODE_ENV !== 'production') {
+	    if (false) {
 	      if (!/^[a-zA-Z][\w-]*$/.test(name)) {
 	        warn('Invalid component name: "' + name + '". Component names ' + 'can only contain alphanumeric characaters and the hyphen.');
 	        name = null;
@@ -15467,7 +16393,7 @@
 	        return this.options[type + 's'][id];
 	      } else {
 	        /* istanbul ignore if */
-	        if (process.env.NODE_ENV !== 'production') {
+	        if (false) {
 	          if (type === 'component' && (commonTagRE.test(id) || reservedTagRE.test(id))) {
 	            warn('Do not use built-in or reserved HTML elements as component ' + 'id: ' + id);
 	          }
@@ -15498,17 +16424,17 @@
 	  if (config.devtools) {
 	    if (devtools) {
 	      devtools.emit('init', Vue);
-	    } else if (process.env.NODE_ENV !== 'production' && inBrowser && /Chrome\/\d+/.test(window.navigator.userAgent)) {
+	    } else if (false) {
 	      console.log('Download the Vue Devtools for a better development experience:\n' + 'https://github.com/vuejs/vue-devtools');
 	    }
 	  }
 	}, 0);
 	
 	module.exports = Vue;
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(5)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 33 */
+/* 45 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {  /* globals require, module */
@@ -15519,7 +16445,7 @@
 	   * Module dependencies.
 	   */
 	
-	  var pathtoRegexp = __webpack_require__(34);
+	  var pathtoRegexp = __webpack_require__(47);
 	
 	  /**
 	   * Module exports.
@@ -16134,13 +17060,138 @@
 	
 	  page.sameOrigin = sameOrigin;
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(46)))
 
 /***/ },
-/* 34 */
+/* 46 */
+/***/ function(module, exports) {
+
+	// shim for using process in browser
+	
+	var process = module.exports = {};
+	
+	// cached from whatever global is present so that test runners that stub it
+	// don't break things.  But we need to wrap it in a try catch in case it is
+	// wrapped in strict mode code which doesn't define any globals.  It's inside a
+	// function because try/catches deoptimize in certain engines.
+	
+	var cachedSetTimeout;
+	var cachedClearTimeout;
+	
+	(function () {
+	  try {
+	    cachedSetTimeout = setTimeout;
+	  } catch (e) {
+	    cachedSetTimeout = function () {
+	      throw new Error('setTimeout is not defined');
+	    }
+	  }
+	  try {
+	    cachedClearTimeout = clearTimeout;
+	  } catch (e) {
+	    cachedClearTimeout = function () {
+	      throw new Error('clearTimeout is not defined');
+	    }
+	  }
+	} ())
+	var queue = [];
+	var draining = false;
+	var currentQueue;
+	var queueIndex = -1;
+	
+	function cleanUpNextTick() {
+	    if (!draining || !currentQueue) {
+	        return;
+	    }
+	    draining = false;
+	    if (currentQueue.length) {
+	        queue = currentQueue.concat(queue);
+	    } else {
+	        queueIndex = -1;
+	    }
+	    if (queue.length) {
+	        drainQueue();
+	    }
+	}
+	
+	function drainQueue() {
+	    if (draining) {
+	        return;
+	    }
+	    var timeout = cachedSetTimeout(cleanUpNextTick);
+	    draining = true;
+	
+	    var len = queue.length;
+	    while(len) {
+	        currentQueue = queue;
+	        queue = [];
+	        while (++queueIndex < len) {
+	            if (currentQueue) {
+	                currentQueue[queueIndex].run();
+	            }
+	        }
+	        queueIndex = -1;
+	        len = queue.length;
+	    }
+	    currentQueue = null;
+	    draining = false;
+	    cachedClearTimeout(timeout);
+	}
+	
+	process.nextTick = function (fun) {
+	    var args = new Array(arguments.length - 1);
+	    if (arguments.length > 1) {
+	        for (var i = 1; i < arguments.length; i++) {
+	            args[i - 1] = arguments[i];
+	        }
+	    }
+	    queue.push(new Item(fun, args));
+	    if (queue.length === 1 && !draining) {
+	        cachedSetTimeout(drainQueue, 0);
+	    }
+	};
+	
+	// v8 likes predictible objects
+	function Item(fun, array) {
+	    this.fun = fun;
+	    this.array = array;
+	}
+	Item.prototype.run = function () {
+	    this.fun.apply(null, this.array);
+	};
+	process.title = 'browser';
+	process.browser = true;
+	process.env = {};
+	process.argv = [];
+	process.version = ''; // empty string to avoid regexp issues
+	process.versions = {};
+	
+	function noop() {}
+	
+	process.on = noop;
+	process.addListener = noop;
+	process.once = noop;
+	process.off = noop;
+	process.removeListener = noop;
+	process.removeAllListeners = noop;
+	process.emit = noop;
+	
+	process.binding = function (name) {
+	    throw new Error('process.binding is not supported');
+	};
+	
+	process.cwd = function () { return '/' };
+	process.chdir = function (dir) {
+	    throw new Error('process.chdir is not supported');
+	};
+	process.umask = function() { return 0; };
+
+
+/***/ },
+/* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isarray = __webpack_require__(35)
+	var isarray = __webpack_require__(48)
 	
 	/**
 	 * Expose `pathToRegexp`.
@@ -16533,7 +17584,7 @@
 
 
 /***/ },
-/* 35 */
+/* 48 */
 /***/ function(module, exports) {
 
 	module.exports = Array.isArray || function (arr) {
@@ -16542,25 +17593,31 @@
 
 
 /***/ },
-/* 36 */
+/* 49 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=container><a href=\"/\" class=logo>Home</a> <a href=\"/\">About</a><div v-if=user style=\"float: right; line-height: 80px; display: inline-block;\"><button @click=logout>Logout</button><div style=\"display: inline-block; text-align: center; vertical-align: middle; margin: 0 16px; position: relative;\"><p style=\"line-height: 1;\">{{ user.displayName }}</p><p style=\"color: #999; font-size: 0.875rem; line-height: 1;\">{{ user.email }}</p></div><img :src=user.photoURL style=\"max-height: 48px; border-radius: 100%; vertical-align: middle;\"></div></div>"
 
 /***/ },
-/* 37 */
+/* 50 */
 /***/ function(module, exports) {
 
-	module.exports = "<div v-if=vaultsLoading><svg style=\"width: 120px; height: 120px;\" xmlns=http://www.w3.org/2000/svg viewbox=\"0 0 100 100\" preserveaspectratio=xMidYMid class=uil-ring><path fill=none class=bk d=\"M0 0h100v100H0z\"></path><defs><filter id=a x=-100% y=-100% width=300% height=300%><feoffset result=offOut in=SourceGraphic><fegaussianblur result=blurOut in=offOut><feblend in=SourceGraphic in2=blurOut></feblend></fegaussianblur></feoffset></filter></defs><path d=\"M10 50s0 .5.1 1.4c0 .5.1 1 .2 1.7 0 .3.1.7.1 1.1.1.4.1.8.2 1.2.2.8.3 1.8.5 2.8.3 1 .6 2.1.9 3.2.3 1.1.9 2.3 1.4 3.5.5 1.2 1.2 2.4 1.8 3.7.3.6.8 1.2 1.2 1.9.4.6.8 1.3 1.3 1.9 1 1.2 1.9 2.6 3.1 3.7 2.2 2.5 5 4.7 7.9 6.7 3 2 6.5 3.4 10.1 4.6 3.6 1.1 7.5 1.5 11.2 1.6 4-.1 7.7-.6 11.3-1.6 3.6-1.2 7-2.6 10-4.6 3-2 5.8-4.2 7.9-6.7 1.2-1.2 2.1-2.5 3.1-3.7.5-.6.9-1.3 1.3-1.9.4-.6.8-1.3 1.2-1.9.6-1.3 1.3-2.5 1.8-3.7.5-1.2 1-2.4 1.4-3.5.3-1.1.6-2.2.9-3.2.2-1 .4-1.9.5-2.8.1-.4.1-.8.2-1.2 0-.4.1-.7.1-1.1.1-.7.1-1.2.2-1.7.1-.9.1-1.4.1-1.4V54.2c0 .4-.1.8-.1 1.2-.1.9-.2 1.8-.4 2.8-.2 1-.5 2.1-.7 3.3-.3 1.2-.8 2.4-1.2 3.7-.2.7-.5 1.3-.8 1.9-.3.7-.6 1.3-.9 2-.3.7-.7 1.3-1.1 2-.4.7-.7 1.4-1.2 2-1 1.3-1.9 2.7-3.1 4-2.2 2.7-5 5-8.1 7.1L70 85.7c-.8.5-1.7.9-2.6 1.3l-1.4.7-1.4.5c-.9.3-1.8.7-2.8 1C58 90.3 53.9 90.9 50 91l-3-.2c-1 0-2-.2-3-.3l-1.5-.2-.7-.1-.7-.2c-1-.3-1.9-.5-2.9-.7-.9-.3-1.9-.7-2.8-1l-1.4-.6-1.3-.6c-.9-.4-1.8-.8-2.6-1.3l-2.4-1.5c-3.1-2.1-5.9-4.5-8.1-7.1-1.2-1.2-2.1-2.7-3.1-4-.5-.6-.8-1.4-1.2-2-.4-.7-.8-1.3-1.1-2-.3-.7-.6-1.3-.9-2-.3-.7-.6-1.3-.8-1.9-.4-1.3-.9-2.5-1.2-3.7-.3-1.2-.5-2.3-.7-3.3-.2-1-.3-2-.4-2.8-.1-.4-.1-.8-.1-1.2v-1.1-1.7c-.1-1-.1-1.5-.1-1.5z\" fill=#59ebff filter=url(#a)></path><animatetransform attributename=transform type=rotate from=\"0 50 50\" to=\"360 50 50\" repeatcount=indefinite dur=1s></animatetransform></svg></div><table><thead><th>Name</th><th>ID</th><th>Created</th><th>Actions</th></thead><tbody><tr v-for=\"(id, vault) in vaults\"><td>{{ vault.name }}</td><td>{{ id }}</td><td>{{ new Date(vault.meta.created) }}</td><td><a href=\"/vaults/{{ id }}\">Open vault</a> <button @click=removeVault(id)>Remove</button></td></tr></tbody></table><ul><li v-for=\"(id, vault) in vaults\"><a href=\"/vaults/{{ id }}\">{{ vault.name }}</a> - {{ id }}</li></ul>MAIN<br><button @click=createVault>create vault</button>"
+	module.exports = "<p>{{ message }}</p><div class=loading-indicator></div>"
 
 /***/ },
-/* 38 */
+/* 51 */
+/***/ function(module, exports) {
+
+	module.exports = "<loading-indicator v-if=vaultsLoading :message=\"Please wait while loading your vaults...\"></loading-indicator><ul class=vault-list><li class=vault-card v-for=\"(id, vault) in vaults\"><a href=\"/vaults/{{ id }}\" class=vault-card-content><h3 class=title>{{ vault.name }}</h3><p>Created: {{ vault.created | formatDate }}</p></a><div class=vault-card-actions><a href=\"/vaults/{{ id }}\">Open</a> <a href=# @click.prevent=removeVault(id)>Remove</a></div></li></ul>MAIN<br><button @click=\"navigate('/vaults/new')\">create vault</button><modal-window v-if=\"view === 'vault-create'\" @close=goback><form @submit.prevent=createVault><label><input type=text v-model=newVaultName></label> <button type=submit>Create Vault</button> <button @click.prevent=goback>Cancel</button></form></modal-window>"
+
+/***/ },
+/* 52 */
 /***/ function(module, exports) {
 
 	module.exports = "<button v-if=vaultOpen @click=lock>Lock this vault</button><h2>{{ vault.name }} <a href=#>Edit</a></h2><div style=\"color: #777;\">{{ vault.id }}</div><form v-if=!vault.hasPassword @submit.prevent=initializeVault(initPassword) style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is not set up yet. Please provide a password.</p><p>Please note that this password is only for you, it cannot be recovered by us, nor anyone else.</p><label>Password <input type=password v-model=initPassword></label> <button type=submit>Create this vault</button></form><form v-if=vaultLocked @submit.prevent=open style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is locked. Please provide your password to unlock it.</p><input type=password v-model=password> <button type=submit>Open this vault</button></form><form v-if=vaultOpen @submit=filter><input type=text v-model=filterText> <button type=submit>Search</button></form><div v-if=vaultOpen><ul><li v-for=\"secret in decryptedSecrets\">{{ secret.title }} {{ secret.username }} <button @click=copyToClipboard(secret)>Copy to clipboard</button> <button @click=reveal(secret)>Show password</button> <button @click=edit(secret)>Edit</button> <button @click=remove(secret)>Remove</button></li></ul><form v-if=vaultOpen @submit.prevent=add><h4>Add secret</h4><label for=new-secret-title>Title</label> <input type=text id=new-secret-title> <label for=new-secret-username>Username</label> <input type=text id=new-secret-username> <label for=new-secret-value>Password</label> <input type=passowrd id=new-secret-value> <button>Generate password</button> <button type=submit>Create secret</button></form></div>"
 
 /***/ },
-/* 39 */
+/* 53 */
 /***/ function(module, exports) {
 
 	module.exports = "<div style=\"text-align: center;\"><p>Please log in</p><button @click=\"login('Github')\">Log in with GitHub</button> <button @click=\"login('Google')\">Log in with Google</button></div>"

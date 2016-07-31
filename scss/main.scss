@@ -9,8 +9,9 @@
 body {
   line-height: 1.36;
   font-family: Open Sans, sans-serif;
-  font-size: 1rem;
+  font-size: 1.125rem;
   background-color: #f1f1f1;
+  color: #333;
 }
 
 #app-root {
@@ -170,10 +171,6 @@ body {
   // }
 }
 
-body {
-  padding-bottom: 48px;
-}
-
 .notification {
   background-color: rgba(0, 0, 0, 0.8);
   color: #fff;
@@ -192,4 +189,77 @@ body {
   bottom: 0;
   height: 48px;
   text-align: center;
+}
+
+.vault-card {
+  max-width: 400px;
+  margin: 20px auto;
+  box-shadow: 0 2px 5px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12);
+  list-style-type: none;
+}
+
+.vault-card-content {
+  display: block;
+  padding: 20px;
+  border-radius: 0 0 2px 2px;
+  text-decoration: none;
+  color: #333;
+
+  .title {
+    font-size: 1.75rem;
+    font-weight: 300;
+    margin-bottom: 12px;
+  }
+}
+
+.vault-card-actions {
+  position: relative;
+  background-color: inherit;
+  border-top: 1px solid rgba(160,160,160,0.2);
+  padding: 20px;
+
+  a {
+    text-transform: uppercase;
+    color: material-color('purple', '300');
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 12px;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-indicator {
+  width: 100px;
+  height: 100px;
+  border-radius:50%;
+  // border: 8px solid transparent;
+  // border-color: transparent;
+  // position: relative;
+  // background-color: #fff;
+  // background-clip: padding-box;
+
+  animation: spin 0.63s infinite linear;
+  border: 8px solid material-color('blue', '50');
+  border-top-color: material-color('blue', '500');
+
+  // &:after {
+  //   animation: spin 0.63s infinite linear;
+  //   position: absolute;
+  //   top: -8px;
+  //   bottom: -8px;
+  //   left: -8px;
+  //   right: -8px;
+  //   background: linear-gradient(material-color('blue', '50'), material-color('blue', '500'));
+  //   content: '';
+  //   z-index: -1;
+  //   border-radius: 50%;
+  // }
 }

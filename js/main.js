@@ -40,6 +40,15 @@ Vue.component('app-header', {
     }
 });
 
+import { default as registerFilters } from './filters';
+
+registerFilters(Vue);
+//
+// console.log(document.hidden);
+//  document.addEventListener('visibilitychange', e => {
+//     console.log(document.hidden);
+//  });
+
 // Screens:
 // - create vault
 // - edit vault
@@ -47,35 +56,76 @@ Vue.component('app-header', {
 // - vault content (list of secrets)
 // - edit secret / detail view
 
+Vue.component('loading-indicator', {
+    replace: false,
+    props: ['message'],
+    template: require('../templates/loading-indicator.html')
+});
+
 Vue.component('app-main', {
     replace: false,
     template: require('../templates/app-main.html'),
     data() {
         return {
             vaults: {},
-            vaultsLoading: false
+            vaultsLoading: false,
+            view: 'vault-list',
+            history: []
         };
     },
 
     created() {
+        page('/vaults', (ctx, next) => {
+            this.view = 'vault-list';
+        });
+
+        page('/vaults/new', (ctx, next) => {
+            this.view = 'vault-create';
+        });
+
+        page('/vaults/:id', (ctx, next) => {
+            this.view = 'vault-details';
+            this.currentVaultId = ctx.params.id;
+        });
+
+        page({});
+
         this.vaultsLoading = true;
         const uid = firebase.auth().currentUser.uid;
-        const dbref = firebase.database().ref(`users/${uid}/vaults-test`);
+        const dbref = firebase.database().ref(`users/${uid}/vaults-test`).orderByChild('created');
         dbref.on('value', snap => {
-            console.log(snap.val());
-            this.vaults = snap.val();
+            this.vaults = {};
+            snap.forEach(o => {
+                this.vaults[o.key] = o.val();
+            });
             this.vaultsLoading = false;
         });
     },
 
     methods: {
+        navigate(path) {
+            this.history.push(path);
+            page(path);
+        },
+
+        goback() {
+            this.history.pop();
+            page(this.history[this.history.length - 1] || '/');
+        },
+
         createVault() {
+            const name = this.newVaultName;
             const uid = firebase.auth().currentUser.uid;
             const id = uuid();
             const dbref = firebase.database().ref(`users/${uid}/vaults-test/${id}`);
-            dbref.set({ name: 'Test name', id, meta: { created: firebase.database.ServerValue.TIMESTAMP }, secrets: [] })
+            dbref.set({ name, id, created: firebase.database.ServerValue.TIMESTAMP, secrets: [] })
                     .then(x => console.log(x))
-                    .catch(e => console.error(e));
+                    .catch(e => console.error(e))
+                    .then(() => this.navigate(`/vaults/${id}`));
+        },
+
+        cancelCreateVault() {
+            this.view = '';
         },
 
         removeVault(id) {
@@ -225,22 +275,6 @@ const model = new Vue({
         // }
     }
 });
-
-page('/', (ctx, next) => {
-    // console.log(ctx);
-});
-
-
-page('/vaults/new', (ctx, next) => {
-    console.log('new vault');
-});
-
-page('/vaults/:id', (ctx, next) => {
-    console.log('vaultid:', ctx.params.id);
-    model.currentVaultId = ctx.params.id;
-});
-
-page({});
 
 store.subscribe(() => {
     const state = store.getState();
