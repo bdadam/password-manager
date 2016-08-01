@@ -4,18 +4,17 @@ const $ = require('cash-dom');
 const Vue = require('vue');
 const page = require('page');
 
-import { encrypt, decrypt } from './crypto.js';
-import Vault from './vault.js';
+// import { encrypt, decrypt } from './crypto.js';
+// import Vault from './vault.js';
 
 
-import store from './store';
 import { firebase } from './firebase';
-
+import store from './store';
 import once from 'lodash/once';
 // import once from 'lodash';
 
 
-import app from './app';
+// import app from './app';
 
 const PASS = '123456';
 const SALT = 'salt';
@@ -56,49 +55,55 @@ registerFilters(Vue);
 // - vault content (list of secrets)
 // - edit secret / detail view
 
-Vue.component('loading-indicator', {
+Vue.component('vault-list', {
     replace: false,
-    props: ['message'],
-    template: require('../templates/loading-indicator.html')
+    props: ['store', 'vaults'],
+    template: require('../templates/vault-list.html'),
+
+    created() {
+        this.vaults = this.store.getState().vaults;
+        this.store.subscribe(() => {
+            this.vaults = this.store.getState().vaults;
+        });
+    }
+});
+
+Vue.component('vault-details', {
+    replace: false,
+    props: ['vaultid', 'store'],
+    template: require('../templates/vault-details.html'),
+    created() {
+        const state = this.store.getState();
+        this.vaultid = state.selectedVaultId;
+    },
+    computed: {
+        vault() {
+            const state = this.store.getState();
+            const vault = state.vaults[this.vaultid];
+            return vault;
+        }
+    }
 });
 
 Vue.component('app-main', {
     replace: false,
     template: require('../templates/app-main.html'),
+    props: ['store'],
     data() {
         return {
             vaults: {},
             vaultsLoading: false,
             view: 'vault-list',
-            history: []
+            history: [],
+            store,
+            currentVaultId: ''
         };
     },
 
     created() {
-        page('/vaults', (ctx, next) => {
-            this.view = 'vault-list';
-        });
-
-        page('/vaults/new', (ctx, next) => {
-            this.view = 'vault-create';
-        });
-
-        page('/vaults/:id', (ctx, next) => {
-            this.view = 'vault-details';
-            this.currentVaultId = ctx.params.id;
-        });
-
-        page({});
-
-        this.vaultsLoading = true;
-        const uid = firebase.auth().currentUser.uid;
-        const dbref = firebase.database().ref(`users/${uid}/vaults-test`).orderByChild('created');
-        dbref.on('value', snap => {
-            this.vaults = {};
-            snap.forEach(o => {
-                this.vaults[o.key] = o.val();
-            });
-            this.vaultsLoading = false;
+        this.store.subscribe(() => {
+            const state = this.store.getState();
+            this.currentVaultId = state.selectedVaultId;
         });
     },
 
@@ -215,7 +220,8 @@ const model = new Vue({
         showModal: false,
 
         starting: true,
-        currentview: ''
+        currentview: '',
+        store
     },
 
     ready() {
@@ -276,11 +282,11 @@ const model = new Vue({
     }
 });
 
-store.subscribe(() => {
-    const state = store.getState();
-    model.user = state.user;
-    model.vaults = state.vaults;
-});
+// store.subscribe(() => {
+//     const state = store.getState();
+//     model.user = state.user;
+//     model.vaults = state.vaults;
+// });
 
 
 

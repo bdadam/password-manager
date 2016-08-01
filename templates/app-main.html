@@ -1,21 +1,10 @@
-<loading-indicator v-if="vaultsLoading" :message="Please wait while loading your vaults..."></loading-indicator>
+<div style="text-align: center; margin: 8px auto">
+    <button @click="navigate('/vaults/new')">create vault</button>
+</div>
 
-<ul class="vault-list">
-    <li class="vault-card" v-for="(id, vault) in vaults">
-        <a href="/vaults/{{ id }}" class="vault-card-content">
-            <h3 class="title">{{ vault.name }}</h3>
-            <p>Created: {{ vault.created | formatDate }}</p>
-        </a>
-        <div class="vault-card-actions">
-            <a href="/vaults/{{ id }}">Open</a>
-            <a href="#" @click.prevent="removeVault(id)">Remove</a>
-        </div>
-    </li>
-</ul>
-
-MAIN
-<br>
-<button @click="navigate('/vaults/new')">create vault</button>
+<vault-list :store="store"></vault-list>
+<vault-details :store="store" :vaultid="currentVaultId"></vault-details>
+<vault-secret-details :store="store" :secretid="currentSecretId"></vault-secret-details>
 
 <modal-window v-if="view === 'vault-create'" @close="goback">
     <form @submit.prevent="createVault">

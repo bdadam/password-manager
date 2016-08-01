@@ -1,7 +1,7 @@
 const firebase = window.firebase;
 // const firebase = require('firebase');
 
-import store from './store';
+// import store from './store';
 
 var userid;
 

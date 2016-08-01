@@ -1,0 +1,14 @@
+<div v-if="vaults === undefined" class="loading-indicator"></div>
+
+<ul class="vault-list" v-if="vaults">
+    <li class="vault-card" v-for="(id, vault) in vaults">
+        <a href="/vaults/{{ id }}" class="vault-card-content">
+            <h3 class="title">{{ vault.name }}</h3>
+            <p>Created: {{ vault.created | formatDate }}</p>
+        </a>
+        <div class="vault-card-actions">
+            <a href="/vaults/{{ id }}">Open</a>
+            <a href="#" @click.prevent="removeVault(id)">Remove</a>
+        </div>
+    </li>
+</ul>
