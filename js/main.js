@@ -68,8 +68,20 @@ Vue.component('vault-list', {
     }
 });
 
+Vue.component('ask-vault-info', {
+    replace: false,
+    template: '',
+
+    methods: {
+
+    }
+});
+
 Vue.component('vault-details', {
     replace: false,
+    data() {
+        return { password: null, isPasswordCorrect: false }
+    },
     props: ['vaultid', 'store'],
     template: require('../templates/vault-details.html'),
     created() {
@@ -81,6 +93,23 @@ Vue.component('vault-details', {
             const state = this.store.getState();
             const vault = state.vaults[this.vaultid];
             return vault;
+        },
+
+        secrets() {
+            return [];
+
+            const state = this.store.getState();
+            // const vault = state.vaults[this.vaultid];
+            const secrets = state.secrets.filter(s => s.vaultid === this.vaultid);
+
+            return secrets;
+        }
+    },
+
+    methods: {
+        checkPassword() {
+            const decrypt = (data, pw) => data;
+            this.isPasswordCorrect = decrypt(this.vault.test, this.password) === 'test';
         }
     }
 });
@@ -238,6 +267,11 @@ const model = new Vue({
                 }
             });
         });
+
+        store.subscribe(() => {
+            const state = store.getState();
+            this.user = state.user;
+        });
     },
 
     computed: {
@@ -265,6 +299,8 @@ const model = new Vue({
 
             dbref.push(encrypt(JSON.stringify({ asdf: 'qwe_' + Math.random() }), SALT, PASS));
         },
+
+        logout() { firebase.auth().signOut(); }
 
         // sync: () => {
         //     const dbref = firebase.database().ref(`user-passwords/${model.user.uid}`);

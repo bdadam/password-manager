@@ -1,3 +1,20 @@
+<form v-if="!password || !isPasswordCorrect" @submit.prevent="checkPassword">
+    <input type="password" v-model="password">
+    <button type="submit">Unlock vault</button>
+</form>
+
 Id: {{ vaultid }} <br>
 Created: {{ vault.created }} <br>
 Vault name: {{ vault.name }}
+
+<table v-if="isPasswordCorrect">
+    <thead><tr><th>Name</th><th>Username</th><th>Password</th><th>Actions</th></tr></thead>
+    <tbody>
+        <tr v-for="secret in secrets">
+            <td>{{ name }}</td>
+            <td>{{ username }}</td>
+            <td>{{ password }}</td>
+            <td><button>Reveal</button><button>Edit</button><button>Remove</button></td>
+        </tr>
+    </tbody>
+</table>

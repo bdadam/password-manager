@@ -83,6 +83,7 @@ gulp.task('dev', ['sass:watch', 'js:watch', 'html:watch'], () => {
     browserSync.init({
         files: './public/*',
         open: false,
+        notify: false,
         server: {
             baseDir: './public',
             port: 3000,

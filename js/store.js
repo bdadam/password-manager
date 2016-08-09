@@ -1,14 +1,13 @@
 import { createStore } from 'redux';
 import page from 'page';
 
-
 const defaultState = {
     starting: true,
     user: undefined,
     vaults: undefined,
     secrets: undefined,
-
     selectedVaultId: null,
+    passwords: {},
 };
 
 const store = createStore((state = defaultState, action) => {
@@ -21,6 +20,11 @@ const store = createStore((state = defaultState, action) => {
             return Object.assign({}, state, { starting: false }, { secrets: action.secrets });
         case 'select-vault':
             return Object.assign({}, state, { starting: false }, { selectedVaultId: action.id });
+        case 'select-secret':
+            return Object.assign({}, state, { starting: false }, { selectedSecretId: action.id });
+
+        // case 'open-vault':
+        //     return Object.assign({}, state, { starting: false }, { passwords: Object.assign({}, state.passwords, { [action.vaultid]: action.password }) });
         default:
             return state;
     }
@@ -74,6 +78,7 @@ page('/vaults/:id', (ctx, next) => {
 });
 
 page('*', (ctx, next) => {
+    console.log(ctx);
     store.dispatch({ type: 'select-vault', id: '' });
 });
 

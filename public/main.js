@@ -135,8 +135,19 @@
 	    }
 	});
 	
+	Vue.component('ask-vault-info', {
+	    replace: false,
+	    template: '',
+	
+	    methods: {}
+	});
+	
 	Vue.component('vault-details', {
 	    replace: false,
+	    data: function data() {
+	        return { password: null, isPasswordCorrect: false };
+	    },
+	
 	    props: ['vaultid', 'store'],
 	    template: __webpack_require__(47),
 	    created: function created() {
@@ -149,6 +160,28 @@
 	            var state = this.store.getState();
 	            var vault = state.vaults[this.vaultid];
 	            return vault;
+	        },
+	        secrets: function secrets() {
+	            var _this3 = this;
+	
+	            return [];
+	
+	            var state = this.store.getState();
+	            // const vault = state.vaults[this.vaultid];
+	            var secrets = state.secrets.filter(function (s) {
+	                return s.vaultid === _this3.vaultid;
+	            });
+	
+	            return secrets;
+	        }
+	    },
+	
+	    methods: {
+	        checkPassword: function checkPassword() {
+	            var decrypt = function decrypt(data, pw) {
+	                return data;
+	            };
+	            this.isPasswordCorrect = decrypt(this.vault.test, this.password) === 'test';
 	        }
 	    }
 	});
@@ -168,11 +201,11 @@
 	        };
 	    },
 	    created: function created() {
-	        var _this3 = this;
+	        var _this4 = this;
 	
 	        this.store.subscribe(function () {
-	            var state = _this3.store.getState();
-	            _this3.currentVaultId = state.selectedVaultId;
+	            var state = _this4.store.getState();
+	            _this4.currentVaultId = state.selectedVaultId;
 	        });
 	    },
 	
@@ -187,7 +220,7 @@
 	            page(this.history[this.history.length - 1] || '/');
 	        },
 	        createVault: function createVault() {
-	            var _this4 = this;
+	            var _this5 = this;
 	
 	            var name = this.newVaultName;
 	            var uid = _firebase.firebase.auth().currentUser.uid;
@@ -198,7 +231,7 @@
 	            }).catch(function (e) {
 	                return console.error(e);
 	            }).then(function () {
-	                return _this4.navigate('/vaults/' + id);
+	                return _this5.navigate('/vaults/' + id);
 	            });
 	        },
 	        cancelCreateVault: function cancelCreateVault() {
@@ -241,11 +274,11 @@
 	
 	    computed: {
 	        vault: function vault() {
-	            var _this5 = this;
+	            var _this6 = this;
 	
 	            var state = _store2.default.getState();
 	            var f = state.vaults.filter(function (v) {
-	                return v.id === _this5.vaultid;
+	                return v.id === _this6.vaultid;
 	            });
 	            return f[0];
 	        },
@@ -297,20 +330,25 @@
 	    }, 'store', _store2.default),
 	
 	    ready: function ready() {
-	        var _this6 = this;
+	        var _this7 = this;
 	
 	        _firebase.firebase.auth().getRedirectResult().catch(function (ex) {
 	            // todo: log exception to GA
 	        }).then(function () {
 	            _firebase.firebase.auth().onAuthStateChanged(function (user) {
-	                _this6.starting = false;
+	                _this7.starting = false;
 	
 	                if (user && user.uid) {
-	                    _this6.currentview = 'app-main';
+	                    _this7.currentview = 'app-main';
 	                } else {
-	                    _this6.currentview = 'login-screen';
+	                    _this7.currentview = 'login-screen';
 	                }
 	            });
+	        });
+	
+	        _store2.default.subscribe(function () {
+	            var state = _store2.default.getState();
+	            _this7.user = state.user;
 	        });
 	    },
 	
@@ -320,10 +358,10 @@
 	            return this.vaults[0] || { title: 'default' };
 	        },
 	        tabs: function tabs() {
-	            var _this7 = this;
+	            var _this8 = this;
 	
 	            var tabs = this.vaults.map(function (vault) {
-	                return { text: vault.name, href: '/vaults/' + vault.id, title: '', classes: _this7.currentVaultId === vault.id ? 'tab active' : 'tab' };
+	                return { text: vault.name, href: '/vaults/' + vault.id, title: '', classes: _this8.currentVaultId === vault.id ? 'tab active' : 'tab' };
 	            });
 	            tabs.push({ text: '+ New vault', href: '/vaults/new', title: '', classes: 'tab' });
 	            tabs.push({ text: 'Settings', href: '/vaults/settings', title: '', classes: 'tab' });
@@ -341,7 +379,25 @@
 	            });
 	
 	            dbref.push(encrypt(JSON.stringify({ asdf: 'qwe_' + Math.random() }), SALT, PASS));
+	        },
+	
+	        logout: function logout() {
+	            _firebase.firebase.auth().signOut();
 	        }
+	
+	        // sync: () => {
+	        //     const dbref = firebase.database().ref(`user-passwords/${model.user.uid}`);
+	        //
+	        //     dbref.once('value', snap => {
+	        //         snap.forEach(x => {
+	        //             const encryptedVal = x.val();
+	        //             const realVal = decrypt(encryptedVal, SALT, PASS);
+	        //             const id = x.key;
+	        //             const obj = JSON.parse(realVal);
+	        //             console.log(id, encryptedVal, realVal, obj);
+	        //         });
+	        //     });
+	        // }
 	
 	    }
 	});
@@ -514,8 +570,8 @@
 	    user: undefined,
 	    vaults: undefined,
 	    secrets: undefined,
-	
-	    selectedVaultId: null
+	    selectedVaultId: null,
+	    passwords: {}
 	};
 	
 	var store = (0, _redux.createStore)(function () {
@@ -531,6 +587,11 @@
 	            return Object.assign({}, state, { starting: false }, { secrets: action.secrets });
 	        case 'select-vault':
 	            return Object.assign({}, state, { starting: false }, { selectedVaultId: action.id });
+	        case 'select-secret':
+	            return Object.assign({}, state, { starting: false }, { selectedSecretId: action.id });
+	
+	        // case 'open-vault':
+	        //     return Object.assign({}, state, { starting: false }, { passwords: Object.assign({}, state.passwords, { [action.vaultid]: action.password }) });
 	        default:
 	            return state;
 	    }
@@ -584,6 +645,7 @@
 	});
 	
 	(0, _page2.default)('*', function (ctx, next) {
+	    console.log(ctx);
 	    store.dispatch({ type: 'select-vault', id: '' });
 	});
 	
@@ -15045,7 +15107,7 @@
 /* 45 */
 /***/ function(module, exports) {
 
-	module.exports = "<div class=container><a href=\"/\" class=logo>Home</a> <a href=\"/\">About</a><div v-if=user style=\"float: right; line-height: 80px; display: inline-block;\"><button @click=logout>Logout</button><div style=\"display: inline-block; text-align: center; vertical-align: middle; margin: 0 16px; position: relative;\"><p style=\"line-height: 1;\">{{ user.displayName }}</p><p style=\"color: #999; font-size: 0.875rem; line-height: 1;\">{{ user.email }}</p></div><img :src=user.photoURL style=\"max-height: 48px; border-radius: 100%; vertical-align: middle;\"></div></div>"
+	module.exports = "<div v-if=user><button @click=logout>Logout</button><div style=\"display: inline-block; text-align: center; vertical-align: middle; margin: 0 16px; position: relative;\"><p style=\"line-height: 1;\">{{ user.displayName }}</p><p style=\"color: #999; font-size: 0.875rem; line-height: 1;\">{{ user.email }}</p></div><img :src=user.photoURL style=\"max-height: 48px; border-radius: 100%; vertical-align: middle;\"></div>"
 
 /***/ },
 /* 46 */
@@ -15057,7 +15119,7 @@
 /* 47 */
 /***/ function(module, exports) {
 
-	module.exports = "Id: {{ vaultid }}<br>Created: {{ vault.created }}<br>Vault name: {{ vault.name }}"
+	module.exports = "<form v-if=\"!password || !isPasswordCorrect\" @submit.prevent=checkPassword><input type=password v-model=password> <button type=submit>Unlock vault</button></form>Id: {{ vaultid }}<br>Created: {{ vault.created }}<br>Vault name: {{ vault.name }}<table v-if=isPasswordCorrect><thead><tr><th>Name</th><th>Username</th><th>Password</th><th>Actions</th></tr></thead><tbody><tr v-for=\"secret in secrets\"><td>{{ name }}</td><td>{{ username }}</td><td>{{ password }}</td><td><button>Reveal</button><button>Edit</button><button>Remove</button></td></tr></tbody></table>"
 
 /***/ },
 /* 48 */

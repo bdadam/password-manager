@@ -13,17 +13,16 @@
         <button>Dismiss</button>
     </div> -->
 
-    <div id="app-root" style="display: flex; flex-direction: column; min-height: 100vh;">
-        <header class="site-header" is="app-header"></header>
-
+    <div id="app-root">
         <header class="site-header" style="text-align: center; position: relative;">
             <button style="position: absolute; line-height: 80px; left: 0; border: 0; background-color: #fff; font-size: 1.25rem; font-family: inherit; padding: 0 20px;"><img style="vertical-align: middle; margin-right: 8px;" src="http://placehold.it/32x32">Menu</button>
             <a href="/"><img src="http://placehold.it/120x48" style="top: 16px; position: relative;"></a>
+            <app-header style="line-height:80px; float: right;"></app-header>
         </header>
 
-        <main style="flex: 1; position: relative;">
-            <div v-if="starting" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #fff; display: flex; justify-content: center; align-items: center; z-index: 10; flex-direction: column;">
-                <p style="margin-bottom: 12px;">Please wait while starting up...</p>
+        <main>
+            <div v-if="starting" class="startup-screen">
+                <p>Please wait while starting up...</p>
                 <div class="loading-indicator"></div>
             </div>
 
@@ -79,7 +78,7 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/3.1.0/firebase.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/3.2.1/firebase.js" defer></script>
     <!-- <script src="/main.js?v=##js_hash##" defer></script> -->
     <script src="/main.js" defer></script>
     <script>
