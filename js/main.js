@@ -156,6 +156,8 @@ Vue.component('app-main', {
                     .then(x => console.log(x))
                     .catch(e => console.error(e))
                     .then(() => this.navigate(`/vaults/${id}`));
+
+            this.newVaultName = '';
         },
 
         cancelCreateVault() {

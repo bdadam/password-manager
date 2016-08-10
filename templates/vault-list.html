@@ -8,6 +8,7 @@
         </a>
         <div class="vault-card-actions">
             <a href="/vaults/{{ id }}">Open</a>
+            <a href="#" @click.prevent="changeVaultPassword(id)">Change password</a>
             <a href="#" @click.prevent="removeVault(id)">Remove</a>
         </div>
     </li>

@@ -1,18 +1,7 @@
 @import url(https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,300italic,400italic,600italic,700,800,700italic,800italic&subset=latin,greek,greek-ext,vietnamese,cyrillic-ext,latin-ext,cyrillic);
 
-*, *:before, *:after {
-  padding: 0;
-  margin: 0;
-  box-sizing: border-box;
-}
-
-body {
-  line-height: 1.36;
-  font-family: Open Sans, sans-serif;
-  font-size: 1.125rem;
-  background-color: #f1f1f1;
-  color: #333;
-}
+@import 'sass-material-colors';
+@import 'defaults';
 
 #app-root {
   background-color: #fff;
@@ -85,19 +74,11 @@ body {
   text-align: center;
 }
 
-// @import '~sass-material-colors/sass/_sass-material-colors';
-@import 'sass-material-colors';
-
 .vault-tabs {
   font-size: 0;
   margin: 16px 0;
   border-bottom: 1px solid #999;
   overflow: hidden;
-
-  // li {
-  //   display: inline-block;
-  //   margin-bottom: -1px;
-  // }
 
   .tab {
     display: inline-block;
@@ -125,11 +106,6 @@ body {
     text-transform: uppercase;
 
   }
-}
-
-body {
-  overflow-x: hidden;
-  overflow-y: scroll !important;
 }
 
 .modal-transition {
@@ -295,20 +271,5 @@ main {
 
   p {
     margin-bottom: 12px;
-  }
-}
-
-button {
-  padding: 8px 16px;
-  background-color: #f1f1f1;
-  border: 0;
-  cursor: pointer;
-  border-radius: 2px;
-  font-size: inherit;
-  font-family: inherit;
-  line-height: 1;
-
-  &:hover {
-    background-color: #ccc;
   }
 }

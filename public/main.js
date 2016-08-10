@@ -233,6 +233,8 @@
 	            }).then(function () {
 	                return _this5.navigate('/vaults/' + id);
 	            });
+	
+	            this.newVaultName = '';
 	        },
 	        cancelCreateVault: function cancelCreateVault() {
 	            this.view = '';
@@ -527,25 +529,26 @@
 	//     }
 	// });
 	
-	var upsertVault = function upsertVault(vault) {
-	    var dbref = firebase.database().ref("users/" + userid + "/vaults/" + vault.id);
-	    dbref.set(vault);
-	};
-	
-	var usermanager = {
-	    login: function login(provider) {
-	        var authProvider = new firebase.auth.GithubAuthProvider();
-	        authProvider.addScope('user');
-	        firebase.auth().signInWithRedirect(authProvider);
-	    },
-	    logout: function logout() {
-	        firebase.auth().signOut();
-	    }
-	};
+	// const upsertVault = vault => {
+	//     const dbref = firebase.database().ref(`users/${userid}/vaults/${vault.id}`);
+	//     dbref.set(vault);
+	// };
+	//
+	// const usermanager = {
+	//     login(provider) {
+	//         var authProvider = new firebase.auth.GithubAuthProvider();
+	//         authProvider.addScope('user');
+	//         firebase.auth().signInWithRedirect(authProvider);
+	//     },
+	//
+	//     logout() {
+	//         firebase.auth().signOut();
+	//     }
+	// };
+	//
+	// export { firebase, usermanager, upsertVault };
 	
 	exports.firebase = firebase;
-	exports.usermanager = usermanager;
-	exports.upsertVault = upsertVault;
 
 /***/ },
 /* 2 */
@@ -15113,7 +15116,7 @@
 /* 46 */
 /***/ function(module, exports) {
 
-	module.exports = "<div v-if=\"vaults === undefined\" class=loading-indicator></div><ul class=vault-list v-if=vaults><li class=vault-card v-for=\"(id, vault) in vaults\"><a href=\"/vaults/{{ id }}\" class=vault-card-content><h3 class=title>{{ vault.name }}</h3><p>Created: {{ vault.created | formatDate }}</p></a><div class=vault-card-actions><a href=\"/vaults/{{ id }}\">Open</a> <a href=# @click.prevent=removeVault(id)>Remove</a></div></li></ul>"
+	module.exports = "<div v-if=\"vaults === undefined\" class=loading-indicator></div><ul class=vault-list v-if=vaults><li class=vault-card v-for=\"(id, vault) in vaults\"><a href=\"/vaults/{{ id }}\" class=vault-card-content><h3 class=title>{{ vault.name }}</h3><p>Created: {{ vault.created | formatDate }}</p></a><div class=vault-card-actions><a href=\"/vaults/{{ id }}\">Open</a> <a href=# @click.prevent=changeVaultPassword(id)>Change password</a> <a href=# @click.prevent=removeVault(id)>Remove</a></div></li></ul>"
 
 /***/ },
 /* 47 */
@@ -15125,7 +15128,7 @@
 /* 48 */
 /***/ function(module, exports) {
 
-	module.exports = "<div style=\"text-align: center; margin: 8px auto\"><button @click=\"navigate('/vaults/new')\">create vault</button></div><vault-list :store=store></vault-list><vault-details :store=store :vaultid=currentVaultId></vault-details><vault-secret-details :store=store :secretid=currentSecretId></vault-secret-details><modal-window v-if=\"view === 'vault-create'\" @close=goback><form @submit.prevent=createVault><label><input type=text v-model=newVaultName></label> <button type=submit>Create Vault</button> <button @click.prevent=goback>Cancel</button></form></modal-window>"
+	module.exports = "<div style=\"text-align: center; margin: 8px auto\"><button @click=\"view = 'vault-create'\">create vault</button></div><vault-list :store=store></vault-list><vault-details :store=store :vaultid=currentVaultId></vault-details><vault-secret-details :store=store :secretid=currentSecretId></vault-secret-details><modal-window v-if=\"view === 'vault-create'\" @close=cancelCreateVault><form @submit.prevent=createVault(newVaultName)><label><input type=text v-model=newVaultName></label> <button type=submit>Create Vault</button> <button @click.prevent=cancelCreateVault>Cancel</button></form></modal-window>"
 
 /***/ },
 /* 49 */

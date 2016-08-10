@@ -35,21 +35,23 @@ firebase.auth().onAuthStateChanged(user => store.dispatch({ type: 'auth-state-ch
 //     }
 // });
 
-const upsertVault = vault => {
-    const dbref = firebase.database().ref(`users/${userid}/vaults/${vault.id}`);
-    dbref.set(vault);
-};
+// const upsertVault = vault => {
+//     const dbref = firebase.database().ref(`users/${userid}/vaults/${vault.id}`);
+//     dbref.set(vault);
+// };
+//
+// const usermanager = {
+//     login(provider) {
+//         var authProvider = new firebase.auth.GithubAuthProvider();
+//         authProvider.addScope('user');
+//         firebase.auth().signInWithRedirect(authProvider);
+//     },
+//
+//     logout() {
+//         firebase.auth().signOut();
+//     }
+// };
+//
+// export { firebase, usermanager, upsertVault };
 
-const usermanager = {
-    login(provider) {
-        var authProvider = new firebase.auth.GithubAuthProvider();
-        authProvider.addScope('user');
-        firebase.auth().signInWithRedirect(authProvider);
-    },
-
-    logout() {
-        firebase.auth().signOut();
-    }
-};
-
-export { firebase, usermanager, upsertVault };
+export { firebase };
