@@ -186,9 +186,24 @@
 	    }
 	});
 	
-	Vue.component('app-main', {
+	Vue.component('prompt-vault-create', {
 	    replace: false,
 	    template: __webpack_require__(48),
+	
+	    methods: {
+	        create: function create() {
+	            console.log('create vault');
+	            this.$emit('vaultcreated', { data: 'data' });
+	        },
+	        cancel: function cancel() {
+	            this.$emit('cancel');
+	        }
+	    }
+	});
+	
+	Vue.component('app-main', {
+	    replace: false,
+	    template: __webpack_require__(49),
 	    props: ['store'],
 	    data: function data() {
 	        return {
@@ -197,7 +212,8 @@
 	            view: 'vault-list',
 	            history: [],
 	            store: _store2.default,
-	            currentVaultId: ''
+	            currentVaultId: '',
+	            prompt: ''
 	        };
 	    },
 	    created: function created() {
@@ -210,7 +226,14 @@
 	    },
 	
 	
+	    // computed: {
+	    //     prompt() { return 'vault-create'; }
+	    // },
+	
 	    methods: {
+	        vaultcreated: function vaultcreated(evt) {
+	            console.log('VBNVVCVCVCV', evt);
+	        },
 	        navigate: function navigate(path) {
 	            this.history.push(path);
 	            page(path);
@@ -243,13 +266,16 @@
 	            var uid = _firebase.firebase.auth().currentUser.uid;
 	            var dbref = _firebase.firebase.database().ref('users/' + uid + '/vaults-test/' + id);
 	            dbref.remove();
+	        },
+	        cancelPrompt: function cancelPrompt() {
+	            console.log('Cancel Prompt');
 	        }
 	    }
 	});
 	
 	Vue.component('vault-view', {
 	    replace: false,
-	    template: __webpack_require__(49),
+	    template: __webpack_require__(50),
 	    props: ['vaultid'],
 	
 	    data: function data() {
@@ -308,7 +334,7 @@
 	
 	Vue.component('login-screen', {
 	    replace: false,
-	    template: __webpack_require__(50),
+	    template: __webpack_require__(51),
 	    methods: {
 	        login: function login(provider) {
 	            var authProvider = new _firebase.firebase.auth[provider + 'AuthProvider']();
@@ -15128,16 +15154,22 @@
 /* 48 */
 /***/ function(module, exports) {
 
-	module.exports = "<div style=\"text-align: center; margin: 8px auto\"><button @click=\"view = 'vault-create'\">create vault</button></div><vault-list :store=store></vault-list><vault-details :store=store :vaultid=currentVaultId></vault-details><vault-secret-details :store=store :secretid=currentSecretId></vault-secret-details><modal-window v-if=\"view === 'vault-create'\" @close=cancelCreateVault><form @submit.prevent=createVault(newVaultName)><label><input type=text v-model=newVaultName></label> <button type=submit>Create Vault</button> <button @click.prevent=cancelCreateVault>Cancel</button></form></modal-window>"
+	module.exports = "<form @submit.prevent=create style=\"text-align: center;\"><label>Name <input type=text></label> <label>Password <input type=password></label> <label>Confirm password <input type=password></label> <button type=submit>Create</button> <button @click=cancel type=reset>Cancel</button></form>"
 
 /***/ },
 /* 49 */
 /***/ function(module, exports) {
 
-	module.exports = "<button v-if=vaultOpen @click=lock>Lock this vault</button><h2>{{ vault.name }} <a href=#>Edit</a></h2><div style=\"color: #777;\">{{ vault.id }}</div><form v-if=!vault.hasPassword @submit.prevent=initializeVault(initPassword) style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is not set up yet. Please provide a password.</p><p>Please note that this password is only for you, it cannot be recovered by us, nor anyone else.</p><label>Password <input type=password v-model=initPassword></label> <button type=submit>Create this vault</button></form><form v-if=vaultLocked @submit.prevent=open style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is locked. Please provide your password to unlock it.</p><input type=password v-model=password> <button type=submit>Open this vault</button></form><form v-if=vaultOpen @submit=filter><input type=text v-model=filterText> <button type=submit>Search</button></form><div v-if=vaultOpen><ul><li v-for=\"secret in decryptedSecrets\">{{ secret.title }} {{ secret.username }} <button @click=copyToClipboard(secret)>Copy to clipboard</button> <button @click=reveal(secret)>Show password</button> <button @click=edit(secret)>Edit</button> <button @click=remove(secret)>Remove</button></li></ul><form v-if=vaultOpen @submit.prevent=add><h4>Add secret</h4><label for=new-secret-title>Title</label> <input type=text id=new-secret-title> <label for=new-secret-username>Username</label> <input type=text id=new-secret-username> <label for=new-secret-value>Password</label> <input type=passowrd id=new-secret-value> <button>Generate password</button> <button type=submit>Create secret</button></form></div>"
+	module.exports = "<div style=\"text-align: center; margin: 8px auto\"><button @click=\"prompt = 'vault-create'\">create vault</button></div><prompt-vault-create v-if=\"prompt === 'vault-create'\" @cancel=\"prompt = ''\" @vaultcreated=\"prompt = ''\"></prompt-vault-create><vault-list :store=store></vault-list><vault-details :store=store :vaultid=currentVaultId></vault-details><vault-secret-details :store=store :secretid=currentSecretId></vault-secret-details>"
 
 /***/ },
 /* 50 */
+/***/ function(module, exports) {
+
+	module.exports = "<button v-if=vaultOpen @click=lock>Lock this vault</button><h2>{{ vault.name }} <a href=#>Edit</a></h2><div style=\"color: #777;\">{{ vault.id }}</div><form v-if=!vault.hasPassword @submit.prevent=initializeVault(initPassword) style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is not set up yet. Please provide a password.</p><p>Please note that this password is only for you, it cannot be recovered by us, nor anyone else.</p><label>Password <input type=password v-model=initPassword></label> <button type=submit>Create this vault</button></form><form v-if=vaultLocked @submit.prevent=open style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is locked. Please provide your password to unlock it.</p><input type=password v-model=password> <button type=submit>Open this vault</button></form><form v-if=vaultOpen @submit=filter><input type=text v-model=filterText> <button type=submit>Search</button></form><div v-if=vaultOpen><ul><li v-for=\"secret in decryptedSecrets\">{{ secret.title }} {{ secret.username }} <button @click=copyToClipboard(secret)>Copy to clipboard</button> <button @click=reveal(secret)>Show password</button> <button @click=edit(secret)>Edit</button> <button @click=remove(secret)>Remove</button></li></ul><form v-if=vaultOpen @submit.prevent=add><h4>Add secret</h4><label for=new-secret-title>Title</label> <input type=text id=new-secret-title> <label for=new-secret-username>Username</label> <input type=text id=new-secret-username> <label for=new-secret-value>Password</label> <input type=passowrd id=new-secret-value> <button>Generate password</button> <button type=submit>Create secret</button></form></div>"
+
+/***/ },
+/* 51 */
 /***/ function(module, exports) {
 
 	module.exports = "<div style=\"text-align: center;\"><p>Please log in</p><button @click=\"login('Github')\">Log in with GitHub</button> <button @click=\"login('Google')\">Log in with Google</button></div>"

@@ -1,15 +1,17 @@
 <div style="text-align: center; margin: 8px auto">
-    <button @click="view = 'vault-create'">create vault</button>
+    <button @click="prompt = 'vault-create'">create vault</button>
 </div>
+
+<prompt-vault-create v-if="prompt === 'vault-create'" @cancel="prompt = ''" @vaultcreated="prompt = ''" @vaultcreated="vaultcreated"></prompt-vault-create>
 
 <vault-list :store="store"></vault-list>
 <vault-details :store="store" :vaultid="currentVaultId"></vault-details>
 <vault-secret-details :store="store" :secretid="currentSecretId"></vault-secret-details>
 
-<modal-window v-if="view === 'vault-create'" @close="cancelCreateVault">
+<!-- <modal-window v-if="view === 'vault-create'" @close="cancelCreateVault">
     <form @submit.prevent="createVault(newVaultName)">
         <label><input type="text" v-model="newVaultName"></label>
         <button type="submit">Create Vault</button>
         <button @click.prevent="cancelCreateVault">Cancel</button>
     </form>
-</modal-window>
+</modal-window> -->

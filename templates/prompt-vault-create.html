@@ -1,0 +1,7 @@
+<form @submit.prevent="create" style="text-align: center;">
+    <label>Name <input type="text"></label>
+    <label>Password <input type="password"></label>
+    <label>Confirm password <input type="password"></label>
+    <button type="submit">Create</button>
+    <button @click="cancel" type="reset">Cancel</button>
+</form>

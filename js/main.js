@@ -114,6 +114,21 @@ Vue.component('vault-details', {
     }
 });
 
+Vue.component('prompt-vault-create', {
+    replace: false,
+    template: require('../templates/prompt-vault-create.html'),
+
+    methods: {
+        create() {
+            console.log('create vault');
+            this.$emit('vaultcreated', { data: 'data' });
+        },
+        cancel() {
+            this.$emit('cancel');
+        }
+    }
+});
+
 Vue.component('app-main', {
     replace: false,
     template: require('../templates/app-main.html'),
@@ -125,7 +140,8 @@ Vue.component('app-main', {
             view: 'vault-list',
             history: [],
             store,
-            currentVaultId: ''
+            currentVaultId: '',
+            prompt: ''
         };
     },
 
@@ -136,7 +152,15 @@ Vue.component('app-main', {
         });
     },
 
+    // computed: {
+    //     prompt() { return 'vault-create'; }
+    // },
+
     methods: {
+        vaultcreated(evt) {
+            console.log('VBNVVCVCVCV', evt);
+        },
+
         navigate(path) {
             this.history.push(path);
             page(path);
@@ -168,6 +192,10 @@ Vue.component('app-main', {
             const uid = firebase.auth().currentUser.uid;
             const dbref = firebase.database().ref(`users/${uid}/vaults-test/${id}`);
             dbref.remove();
+        },
+
+        cancelPrompt() {
+            console.log('Cancel Prompt');
         }
     }
 });
