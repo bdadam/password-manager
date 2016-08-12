@@ -2,6 +2,8 @@
 
 @import 'sass-material-colors';
 @import 'defaults';
+@import 'modal';
+@import 'form';
 
 #app-root {
   background-color: #fff;
@@ -106,45 +108,6 @@
     text-transform: uppercase;
 
   }
-}
-
-.modal-transition {
-  //
-  // &:before {
-  //   content: "";
-  //   display: block;
-  //   background: rgba(0,0,0,.6);
-  //   position: fixed;
-  //   top: 0; left: 0; right: 0; bottom: 0;
-  //   z-index: 1000;
-  //   transition: opacity .3s ease;
-  //   opacity: 1;
-  // }
-
-  transition: opacity .3s ease;
-  opacity: 1;
-  z-index: 1001;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1000;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.3);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-enter, .modal-leave {
-  // height: 0;
-  // padding: 0 10px;
-  opacity: 0;
-
-  // &:before {
-  //   opacity: 0;
-  // }
 }
 
 .notification {

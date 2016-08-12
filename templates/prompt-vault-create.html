@@ -1,7 +1,33 @@
-<form @submit.prevent="create" style="text-align: center;">
-    <label>Name <input type="text"></label>
-    <label>Password <input type="password"></label>
-    <label>Confirm password <input type="password"></label>
-    <button type="submit">Create</button>
-    <button @click="cancel" type="reset">Cancel</button>
-</form>
+<modal-window @close="cancel">
+    <form autocomplete="off" @submit.prevent="create">
+        <div class="modal-content">
+            <div class="form-row">
+                <label for="vault-create-name" :class="{ error: !nameIsValid }">Vault name</label>
+                <input id="vault-create-name" type="text" v-model="name">
+                <p class="validation-error-message" v-if="!nameIsValid">Invalid name</p>
+            </div>
+
+            <div class="form-row">
+                <label for="vault-create-password" :class="{ error: !passwordIsValid }">Password</label>
+                <input id="vault-create-password" type="password" v-model="password" autocomplete="new-password">
+                <p class="validation-error-message" v-if="!passwordIsValid">Invalid password</p>
+            </div>
+
+            <div class="form-row">
+                <label for="vault-create-password-confirm" :class="{ error: !passwordsMatch }">Confirm password</label>
+                <input id="vault-create-password-confirm" type="password" v-model="passwordConfirm" autocomplete="new-password">
+                <p class="validation-error-message" v-if="!passwordsMatch">Passwords do not match</p>
+            </div>
+
+            <!-- <div class="form-row">
+                <label for="vault-create-notes">Notes</label>
+                <textarea id="vault-create-notes" rows="3"></textarea>
+            </div> -->
+        </div>
+
+        <div class="modal-actions">
+            <button @click="cancel" type="reset">Cancel</button>
+            <button class="btn-primary" type="submit">Create</button>
+        </div>
+    </form>
+</modal-window>

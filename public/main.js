@@ -189,11 +189,29 @@
 	Vue.component('prompt-vault-create', {
 	    replace: false,
 	    template: __webpack_require__(48),
+	    data: function data() {
+	        return {
+	            name: '',
+	            password: '',
+	            passwordConfirm: '',
+	            nameIsValid: true,
+	            passwordIsValid: true,
+	            passwordsMatch: true
+	        };
+	    },
 	
 	    methods: {
+	        validate: function validate() {
+	            this.nameIsValid = !!this.name;
+	            this.passwordsMatch = this.password === this.passwordConfirm;
+	            this.passwordIsValid = !!this.password;
+	
+	            return this.nameIsValid && this.passwordsMatch && this.passwordIsValid;
+	        },
 	        create: function create() {
-	            console.log('create vault');
-	            this.$emit('vaultcreated', { data: 'data' });
+	            if (this.validate()) {
+	                this.$emit('vaultcreated', { name: this.name, password: this.password });
+	            }
 	        },
 	        cancel: function cancel() {
 	            this.$emit('cancel');
@@ -201,9 +219,14 @@
 	    }
 	});
 	
+	Vue.component('prompt-vault-unlock', {
+	    replace: false,
+	    template: __webpack_require__(49)
+	});
+	
 	Vue.component('app-main', {
 	    replace: false,
-	    template: __webpack_require__(49),
+	    template: __webpack_require__(50),
 	    props: ['store'],
 	    data: function data() {
 	        return {
@@ -222,60 +245,44 @@
 	        this.store.subscribe(function () {
 	            var state = _this4.store.getState();
 	            _this4.currentVaultId = state.selectedVaultId;
+	
+	            _this4.vaults = state.vaults;
 	        });
 	    },
 	
 	
-	    // computed: {
-	    //     prompt() { return 'vault-create'; }
-	    // },
-	
 	    methods: {
-	        vaultcreated: function vaultcreated(evt) {
-	            console.log('VBNVVCVCVCV', evt);
+	        openPrompt: function openPrompt(prompt) {
+	            this.prompt = prompt;
 	        },
-	        navigate: function navigate(path) {
-	            this.history.push(path);
-	            page(path);
+	        closePrompt: function closePrompt() {
+	            this.prompt = '';
 	        },
-	        goback: function goback() {
-	            this.history.pop();
-	            page(this.history[this.history.length - 1] || '/');
-	        },
-	        createVault: function createVault() {
-	            var _this5 = this;
+	        vaultcreated: function vaultcreated(data) {
+	            this.closePrompt();
 	
-	            var name = this.newVaultName;
+	            var name = data.name;
+	            var password = data.password;
 	            var uid = _firebase.firebase.auth().currentUser.uid;
 	            var id = (0, _uuid2.default)();
 	            var dbref = _firebase.firebase.database().ref('users/' + uid + '/vaults-test/' + id);
-	            dbref.set({ name: name, id: id, created: _firebase.firebase.database.ServerValue.TIMESTAMP, secrets: [] }).then(function (x) {
-	                return console.log(x);
-	            }).catch(function (e) {
+	            dbref.set({ name: name, id: id, created: _firebase.firebase.database.ServerValue.TIMESTAMP, secrets: [] }).catch(function (e) {
 	                return console.error(e);
-	            }).then(function () {
-	                return _this5.navigate('/vaults/' + id);
 	            });
 	
-	            this.newVaultName = '';
-	        },
-	        cancelCreateVault: function cancelCreateVault() {
-	            this.view = '';
+	            page('/vaults/' + id);
 	        },
 	        removeVault: function removeVault(id) {
 	            var uid = _firebase.firebase.auth().currentUser.uid;
 	            var dbref = _firebase.firebase.database().ref('users/' + uid + '/vaults-test/' + id);
 	            dbref.remove();
-	        },
-	        cancelPrompt: function cancelPrompt() {
-	            console.log('Cancel Prompt');
 	        }
 	    }
 	});
 	
 	Vue.component('vault-view', {
 	    replace: false,
-	    template: __webpack_require__(50),
+	    template: __webpack_require__(51),
 	    props: ['vaultid'],
 	
 	    data: function data() {
@@ -302,11 +309,11 @@
 	
 	    computed: {
 	        vault: function vault() {
-	            var _this6 = this;
+	            var _this5 = this;
 	
 	            var state = _store2.default.getState();
 	            var f = state.vaults.filter(function (v) {
-	                return v.id === _this6.vaultid;
+	                return v.id === _this5.vaultid;
 	            });
 	            return f[0];
 	        },
@@ -324,7 +331,7 @@
 	
 	Vue.component('modal-window', {
 	    replace: false,
-	    template: '<div transition="modal" @click.self="close"><div style="background-color: #fff; max-width: 300px; height: 300px; width: 100%;"><slot></slot></div></div>',
+	    template: '<div transition="modal" @click.self="close"><div class="modal-window"><slot></slot></div></div>',
 	    methods: {
 	        close: function close() {
 	            this.$emit('close');
@@ -334,7 +341,7 @@
 	
 	Vue.component('login-screen', {
 	    replace: false,
-	    template: __webpack_require__(51),
+	    template: __webpack_require__(52),
 	    methods: {
 	        login: function login(provider) {
 	            var authProvider = new _firebase.firebase.auth[provider + 'AuthProvider']();
@@ -358,25 +365,25 @@
 	    }, 'store', _store2.default),
 	
 	    ready: function ready() {
-	        var _this7 = this;
+	        var _this6 = this;
 	
 	        _firebase.firebase.auth().getRedirectResult().catch(function (ex) {
 	            // todo: log exception to GA
 	        }).then(function () {
 	            _firebase.firebase.auth().onAuthStateChanged(function (user) {
-	                _this7.starting = false;
+	                _this6.starting = false;
 	
 	                if (user && user.uid) {
-	                    _this7.currentview = 'app-main';
+	                    _this6.currentview = 'app-main';
 	                } else {
-	                    _this7.currentview = 'login-screen';
+	                    _this6.currentview = 'login-screen';
 	                }
 	            });
 	        });
 	
 	        _store2.default.subscribe(function () {
 	            var state = _store2.default.getState();
-	            _this7.user = state.user;
+	            _this6.user = state.user;
 	        });
 	    },
 	
@@ -386,10 +393,10 @@
 	            return this.vaults[0] || { title: 'default' };
 	        },
 	        tabs: function tabs() {
-	            var _this8 = this;
+	            var _this7 = this;
 	
 	            var tabs = this.vaults.map(function (vault) {
-	                return { text: vault.name, href: '/vaults/' + vault.id, title: '', classes: _this8.currentVaultId === vault.id ? 'tab active' : 'tab' };
+	                return { text: vault.name, href: '/vaults/' + vault.id, title: '', classes: _this7.currentVaultId === vault.id ? 'tab active' : 'tab' };
 	            });
 	            tabs.push({ text: '+ New vault', href: '/vaults/new', title: '', classes: 'tab' });
 	            tabs.push({ text: 'Settings', href: '/vaults/settings', title: '', classes: 'tab' });
@@ -15154,22 +15161,28 @@
 /* 48 */
 /***/ function(module, exports) {
 
-	module.exports = "<form @submit.prevent=create style=\"text-align: center;\"><label>Name <input type=text></label> <label>Password <input type=password></label> <label>Confirm password <input type=password></label> <button type=submit>Create</button> <button @click=cancel type=reset>Cancel</button></form>"
+	module.exports = "<modal-window @close=cancel><form autocomplete=off @submit.prevent=create><div class=modal-content><div class=form-row><label for=vault-create-name :class=\"{ error: !nameIsValid }\">Vault name</label> <input id=vault-create-name type=text v-model=name><p class=validation-error-message v-if=!nameIsValid>Invalid name</p></div><div class=form-row><label for=vault-create-password :class=\"{ error: !passwordIsValid }\">Password</label> <input id=vault-create-password type=password v-model=password autocomplete=new-password><p class=validation-error-message v-if=!passwordIsValid>Invalid password</p></div><div class=form-row><label for=vault-create-password-confirm :class=\"{ error: !passwordsMatch }\">Confirm password</label> <input id=vault-create-password-confirm type=password v-model=passwordConfirm autocomplete=new-password><p class=validation-error-message v-if=!passwordsMatch>Passwords do not match</p></div></div><div class=modal-actions><button @click=cancel type=reset>Cancel</button> <button class=btn-primary type=submit>Create</button></div></form></modal-window>"
 
 /***/ },
 /* 49 */
 /***/ function(module, exports) {
 
-	module.exports = "<div style=\"text-align: center; margin: 8px auto\"><button @click=\"prompt = 'vault-create'\">create vault</button></div><prompt-vault-create v-if=\"prompt === 'vault-create'\" @cancel=\"prompt = ''\" @vaultcreated=\"prompt = ''\"></prompt-vault-create><vault-list :store=store></vault-list><vault-details :store=store :vaultid=currentVaultId></vault-details><vault-secret-details :store=store :secretid=currentSecretId></vault-secret-details>"
+	module.exports = "<modal-window><form><div class=form-row><label>Password</label> <input type=password></div></form></modal-window>"
 
 /***/ },
 /* 50 */
 /***/ function(module, exports) {
 
-	module.exports = "<button v-if=vaultOpen @click=lock>Lock this vault</button><h2>{{ vault.name }} <a href=#>Edit</a></h2><div style=\"color: #777;\">{{ vault.id }}</div><form v-if=!vault.hasPassword @submit.prevent=initializeVault(initPassword) style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is not set up yet. Please provide a password.</p><p>Please note that this password is only for you, it cannot be recovered by us, nor anyone else.</p><label>Password <input type=password v-model=initPassword></label> <button type=submit>Create this vault</button></form><form v-if=vaultLocked @submit.prevent=open style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is locked. Please provide your password to unlock it.</p><input type=password v-model=password> <button type=submit>Open this vault</button></form><form v-if=vaultOpen @submit=filter><input type=text v-model=filterText> <button type=submit>Search</button></form><div v-if=vaultOpen><ul><li v-for=\"secret in decryptedSecrets\">{{ secret.title }} {{ secret.username }} <button @click=copyToClipboard(secret)>Copy to clipboard</button> <button @click=reveal(secret)>Show password</button> <button @click=edit(secret)>Edit</button> <button @click=remove(secret)>Remove</button></li></ul><form v-if=vaultOpen @submit.prevent=add><h4>Add secret</h4><label for=new-secret-title>Title</label> <input type=text id=new-secret-title> <label for=new-secret-username>Username</label> <input type=text id=new-secret-username> <label for=new-secret-value>Password</label> <input type=passowrd id=new-secret-value> <button>Generate password</button> <button type=submit>Create secret</button></form></div>"
+	module.exports = "<prompt-vault-create v-if=\"prompt === 'vault-create'\" @cancel=closePrompt @vaultcreated=vaultcreated></prompt-vault-create><prompt-vault-passwordchange v-if=\"prompt === 'vault-passwordchange'\"></prompt-vault-passwordchange><prompt-vault-unlock v-if=\"prompt === 'vault-unlock'\" @cancel=closePrompt @vaultunlocked=vaultunlocked></prompt-vault-unlock><table style=\"max-width: 70%; margin: 0 auto;\"><tr v-for=\"(id, vault) in vaults\"><td style=\"text-align: center; padding: 0;\"><svg class=icXon viewbox=\"0 0 32 32\" style=\"height: 32px; width: 22px;\"><use xlink:href=#icon-lock></use></svg></td><td><p style=\"font-weight: bold;\">{{ vault.name }}</p><p style=\"font-size: 0.875; color: #999;\">{{ id }}</p></td><td><a class=btn-primary href=\"/vaults/{{ id }}\">Open vault</a> <button class=btn @click=removeVault(id)>Remove</button></td></tr><tr><td colspan=3 style=\"text-align: center;\"><button @click=\"openPrompt('vault-create')\">create vault</button></td></tr></table><div style=\"display: none;\"><svg id=icon-lock xmlns=http://www.w3.org/2000/svg xwidth=32 xheight=32 viewbox=\"0 0 22 32\"><path d=\"M18.5 14H18V8c0-3.308-2.692-6-6-6H8C4.692 2 2 4.692 2 8v6h-.5c-.825 0-1.5.675-1.5 1.5v15c0 .825.675 1.5 1.5 1.5h17c.825 0 1.5-.675 1.5-1.5v-15c0-.825-.675-1.5-1.5-1.5zM6 8c0-1.103.897-2 2-2h4c1.103 0 2 .897 2 2v6H6V8z\"></path></svg></div>"
 
 /***/ },
 /* 51 */
+/***/ function(module, exports) {
+
+	module.exports = "<button v-if=vaultOpen @click=lock>Lock this vault</button><h2>{{ vault.name }} <a href=#>Edit</a></h2><div style=\"color: #777;\">{{ vault.id }}</div><form v-if=!vault.hasPassword @submit.prevent=initializeVault(initPassword) style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is not set up yet. Please provide a password.</p><p>Please note that this password is only for you, it cannot be recovered by us, nor anyone else.</p><label>Password <input type=password v-model=initPassword></label> <button type=submit>Create this vault</button></form><form v-if=vaultLocked @submit.prevent=open style=\"max-width: 280px; border: 5px solid #999; padding: 4px; margin: 12px auto;\"><p>This vault is locked. Please provide your password to unlock it.</p><input type=password v-model=password> <button type=submit>Open this vault</button></form><form v-if=vaultOpen @submit=filter><input type=text v-model=filterText> <button type=submit>Search</button></form><div v-if=vaultOpen><ul><li v-for=\"secret in decryptedSecrets\">{{ secret.title }} {{ secret.username }} <button @click=copyToClipboard(secret)>Copy to clipboard</button> <button @click=reveal(secret)>Show password</button> <button @click=edit(secret)>Edit</button> <button @click=remove(secret)>Remove</button></li></ul><form v-if=vaultOpen @submit.prevent=add><h4>Add secret</h4><label for=new-secret-title>Title</label> <input type=text id=new-secret-title> <label for=new-secret-username>Username</label> <input type=text id=new-secret-username> <label for=new-secret-value>Password</label> <input type=passowrd id=new-secret-value> <button>Generate password</button> <button type=submit>Create secret</button></form></div>"
+
+/***/ },
+/* 52 */
 /***/ function(module, exports) {
 
 	module.exports = "<div style=\"text-align: center;\"><p>Please log in</p><button @click=\"login('Github')\">Log in with GitHub</button> <button @click=\"login('Google')\">Log in with Google</button></div>"

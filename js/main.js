@@ -117,16 +117,38 @@ Vue.component('vault-details', {
 Vue.component('prompt-vault-create', {
     replace: false,
     template: require('../templates/prompt-vault-create.html'),
-
+    data() {
+        return {
+            name: '',
+            password: '',
+            passwordConfirm: '',
+            nameIsValid: true,
+            passwordIsValid: true,
+            passwordsMatch: true
+        };
+    },
     methods: {
+        validate() {
+            this.nameIsValid = !!this.name;
+            this.passwordsMatch = this.password === this.passwordConfirm;
+            this.passwordIsValid = !!this.password;
+
+            return this.nameIsValid && this.passwordsMatch && this.passwordIsValid;
+        },
         create() {
-            console.log('create vault');
-            this.$emit('vaultcreated', { data: 'data' });
+            if (this.validate()) {
+                this.$emit('vaultcreated', { name: this.name, password: this.password });
+            }
         },
         cancel() {
             this.$emit('cancel');
         }
     }
+});
+
+Vue.component('prompt-vault-unlock', {
+    replace: false,
+    template: require('../templates/prompt-vault-unlock.html')
 });
 
 Vue.component('app-main', {
@@ -149,53 +171,38 @@ Vue.component('app-main', {
         this.store.subscribe(() => {
             const state = this.store.getState();
             this.currentVaultId = state.selectedVaultId;
+
+            this.vaults = state.vaults;
         });
     },
 
-    // computed: {
-    //     prompt() { return 'vault-create'; }
-    // },
-
     methods: {
-        vaultcreated(evt) {
-            console.log('VBNVVCVCVCV', evt);
+        openPrompt(prompt) {
+            this.prompt = prompt;
         },
 
-        navigate(path) {
-            this.history.push(path);
-            page(path);
+        closePrompt() {
+            this.prompt = '';
         },
 
-        goback() {
-            this.history.pop();
-            page(this.history[this.history.length - 1] || '/');
-        },
+        vaultcreated(data) {
+            this.closePrompt();
 
-        createVault() {
-            const name = this.newVaultName;
+            const name = data.name;
+            const password = data.password;
             const uid = firebase.auth().currentUser.uid;
             const id = uuid();
             const dbref = firebase.database().ref(`users/${uid}/vaults-test/${id}`);
             dbref.set({ name, id, created: firebase.database.ServerValue.TIMESTAMP, secrets: [] })
-                    .then(x => console.log(x))
                     .catch(e => console.error(e))
-                    .then(() => this.navigate(`/vaults/${id}`));
 
-            this.newVaultName = '';
-        },
-
-        cancelCreateVault() {
-            this.view = '';
+            page(`/vaults/${id}`);
         },
 
         removeVault(id) {
             const uid = firebase.auth().currentUser.uid;
             const dbref = firebase.database().ref(`users/${uid}/vaults-test/${id}`);
             dbref.remove();
-        },
-
-        cancelPrompt() {
-            console.log('Cancel Prompt');
         }
     }
 });
@@ -249,7 +256,7 @@ Vue.component('vault-view', {
 
 Vue.component('modal-window', {
     replace: false,
-    template: '<div transition="modal" @click.self="close"><div style="background-color: #fff; max-width: 300px; height: 300px; width: 100%;"><slot></slot></div></div>',
+    template: '<div transition="modal" @click.self="close"><div class="modal-window"><slot></slot></div></div>',
     methods: {
         close() {
             this.$emit('close');

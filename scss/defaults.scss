@@ -5,9 +5,9 @@
 }
 
 body {
-  line-height: 1.36;
+  line-height: 1.5;
   font-family: Open Sans, sans-serif;
-  font-size: 1.125rem;
+  font-size: 1rem;
   background-color: #f1f1f1;
   color: #333;
   overflow-x: hidden;
@@ -24,21 +24,42 @@ button {
   font-family: inherit;
   line-height: 1.5;
 
+  text-transform: uppercase;
+  font-weight: 400;
+
   &:hover {
     background-color: #ccc;
   }
 }
 
-[type=text], [type=password] {
-  padding: 8px 8px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  font-size: inherit;
+.btn-primary {
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 2px;
   font-family: inherit;
-  line-height: 1;
+  line-height: 1.5;
+  background-color: material-color('blue', '600');
+  color: #fff;
+  text-decoration: none;
+
+  &:hover, &:focus, &:active {
+    background-color: material-color('blue', '800');
+  }
 }
 
-label {
-  display: block;
-  font-weight: 600;
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+tr {
+  border: 1px solid #ccc;
+}
+
+td {
+  padding: 8px;
+}
+
+.icon {
+  max-height: 24px;
 }
