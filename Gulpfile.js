@@ -87,6 +87,7 @@ gulp.task('dev', ['sass:watch', 'js:watch', 'html:watch'], () => {
         server: {
             baseDir: './public',
             port: 3000,
+            host: '0.0.0.0',
             middleware: [function(req, res, next) {
                 if (!/(\.js|\.css|\.jpg|\.html|browser-sync-client)/.test(req.url)) {
                     req.url = '/';

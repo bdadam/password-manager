@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Password Manager</title>
-    <!-- <link rel="stylesheet" href="/main.css?v=dc7ac1"> -->
+    <!-- <link rel="stylesheet" href="/main.css?v=e25554"> -->
     <link rel="stylesheet" href="/main.css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -14,10 +14,11 @@
     </div> -->
 
     <div id="app-root">
-        <header class="site-header" style="text-align: center; position: relative;">
-            <button style="position: absolute; line-height: 80px; left: 0; border: 0; background-color: #fff; font-size: 1.25rem; font-family: inherit; padding: 0 20px;"><img style="vertical-align: middle; margin-right: 8px;" src="http://placehold.it/32x32">Menu</button>
-            <a href="/"><img src="http://placehold.it/120x48" style="top: 16px; position: relative;"></a>
-            <app-header style="line-height:80px; float: right;"></app-header>
+        <header class="site-header">
+            <button class="btn-menu-trigger" onclick="this.classList.toggle('open')"><span class="menu-trigger"></span> Menu</button>
+            <div class="menu">
+                <app-header></app-header>
+            </div>
         </header>
 
         <main>
@@ -79,7 +80,7 @@
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/3.2.1/firebase.js" defer></script>
-    <!-- <script src="/main.js?v=fe79cf" defer></script> -->
+    <!-- <script src="/main.js?v=e35459" defer></script> -->
     <script src="/main.js" defer></script>
     <script>
     if ('serviceWorker' in navigator) {

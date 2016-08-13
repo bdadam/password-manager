@@ -199,6 +199,10 @@ Vue.component('app-main', {
             page(`/vaults/${id}`);
         },
 
+        openVault(id) {
+            this.openPrompt('vault-unlock-password');
+        },
+
         removeVault(id) {
             const uid = firebase.auth().currentUser.uid;
             const dbref = firebase.database().ref(`users/${uid}/vaults-test/${id}`);

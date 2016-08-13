@@ -272,6 +272,9 @@
 	
 	            page('/vaults/' + id);
 	        },
+	        openVault: function openVault(id) {
+	            this.openPrompt('vault-unlock-password');
+	        },
 	        removeVault: function removeVault(id) {
 	            var uid = _firebase.firebase.auth().currentUser.uid;
 	            var dbref = _firebase.firebase.database().ref('users/' + uid + '/vaults-test/' + id);
@@ -15173,7 +15176,7 @@
 /* 50 */
 /***/ function(module, exports) {
 
-	module.exports = "<prompt-vault-create v-if=\"prompt === 'vault-create'\" @cancel=closePrompt @vaultcreated=vaultcreated></prompt-vault-create><prompt-vault-passwordchange v-if=\"prompt === 'vault-passwordchange'\"></prompt-vault-passwordchange><prompt-vault-unlock v-if=\"prompt === 'vault-unlock'\" @cancel=closePrompt @vaultunlocked=vaultunlocked></prompt-vault-unlock><table style=\"max-width: 70%; margin: 0 auto;\"><tr v-for=\"(id, vault) in vaults\"><td style=\"text-align: center; padding: 0;\"><svg class=icXon viewbox=\"0 0 32 32\" style=\"height: 32px; width: 22px;\"><use xlink:href=#icon-lock></use></svg></td><td><p style=\"font-weight: bold;\">{{ vault.name }}</p><p style=\"font-size: 0.875; color: #999;\">{{ id }}</p></td><td><a class=btn-primary href=\"/vaults/{{ id }}\">Open vault</a> <button class=btn @click=removeVault(id)>Remove</button></td></tr><tr><td colspan=3 style=\"text-align: center;\"><button @click=\"openPrompt('vault-create')\">create vault</button></td></tr></table><div style=\"display: none;\"><svg id=icon-lock xmlns=http://www.w3.org/2000/svg xwidth=32 xheight=32 viewbox=\"0 0 22 32\"><path d=\"M18.5 14H18V8c0-3.308-2.692-6-6-6H8C4.692 2 2 4.692 2 8v6h-.5c-.825 0-1.5.675-1.5 1.5v15c0 .825.675 1.5 1.5 1.5h17c.825 0 1.5-.675 1.5-1.5v-15c0-.825-.675-1.5-1.5-1.5zM6 8c0-1.103.897-2 2-2h4c1.103 0 2 .897 2 2v6H6V8z\"></path></svg></div>"
+	module.exports = "<prompt-vault-create v-if=\"prompt === 'vault-create'\" @cancel=closePrompt @vaultcreated=vaultcreated></prompt-vault-create><prompt-vault-passwordchange v-if=\"prompt === 'vault-passwordchange'\"></prompt-vault-passwordchange><prompt-vault-unlock v-if=\"prompt === 'vault-unlock'\" @cancel=closePrompt @vaultunlocked=vaultunlocked></prompt-vault-unlock><ul class=vault-list><li v-for=\"(id, vault) in vaults\" class=vault-list-item><div class=status><svg class=icXon viewbox=\"0 0 32 32\" style=\"height: 32px; width: 22px;\"><use xlink:href=#icon-lock></use></svg>locked</div><a class=main href=\"/vaults/{{ id }}\" @click.prevent=openVault(id)><h3>{{ vault.name }}</h3><p style=\"font-size: 0.875rem; color: #999;\">{{ id }}</p></a><div class=actions><a class=btn-primary href=\"/vaults/{{ id }}\" @click.prevent=openVault(id)>Open vault</a> <button class=btn @click=removeVault(id)>Remove</button></div></li></ul><modal-window v-if=\"prompt === 'vault-unlock-password'\"><form @submit.prevent=openVaultWithPassword><p>Your vault is locked. Please provide your password to unlock it.</p><div class=form-row><label>Password</label> <input type=password v-model=promptedVaultPassword> <button>Unlock</button> <button @click.prevent=closePrompt>Cancel</button></div></form></modal-window><div style=\"display: none;\"><svg id=icon-lock xmlns=http://www.w3.org/2000/svg xwidth=32 xheight=32 viewbox=\"0 0 22 32\"><path d=\"M18.5 14H18V8c0-3.308-2.692-6-6-6H8C4.692 2 2 4.692 2 8v6h-.5c-.825 0-1.5.675-1.5 1.5v15c0 .825.675 1.5 1.5 1.5h17c.825 0 1.5-.675 1.5-1.5v-15c0-.825-.675-1.5-1.5-1.5zM6 8c0-1.103.897-2 2-2h4c1.103 0 2 .897 2 2v6H6V8z\"></path></svg></div>"
 
 /***/ },
 /* 51 */
