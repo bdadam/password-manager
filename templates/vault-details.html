@@ -1,7 +1,15 @@
+<div style="background-color: #eee; padding: 20px 0; margin: 0 -20px; margin: 0px -2000px; padding: 20px 2000px;">
+    <div class="container">
+        <h1>{{ vault.name }}</h1>
+    </div>
+</div>
+
 <form v-if="!password || !isPasswordCorrect" @submit.prevent="checkPassword">
     <input type="password" v-model="password">
     <button type="submit">Unlock vault</button>
 </form>
+
+<button @click="">New secret</button>
 
 Id: {{ vaultid }} <br>
 Created: {{ vault.created }} <br>

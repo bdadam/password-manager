@@ -15,10 +15,29 @@
 
     <div id="app-root">
         <header class="site-header">
-            <button class="btn-menu-trigger" onclick="this.classList.toggle('open')"><span class="menu-trigger"></span> Menu</button>
+            <button class="btn-menu-trigger" onclick="this.classList.toggle('open')"><span></span> Menu</button>
             <div class="menu">
-                <app-header></app-header>
+                <header><h1>Brick Password Manager</h1></header>
+                <div class="menu-content">
+                    <app-header></app-header>
+                    <ul>
+                        <li><a href="#">New vault</a></li>
+                        <li><a href="#">Private vault</a></li>
+                        <li><a href="#">Company vault</a></li>
+                        <li><a href="#">Logout</a></li>
+                    </ul>
+                    <h4>Settings</h4>
+                    <ul>
+                        <li><input type="checkbox"> Auto lock vaults</li>
+                        <li><input type="checkbox"> Lock vaults after <input type="text" value="3" style="display: inline; width: 4em; text-align: right;"> minutes of inactivity</li>
+                    </ul>
+                </div>
+                <footer>
+                    FOOTER
+                </footer>
             </div>
+            <div class="menu-backdrop"></div>
+            <a href="/" style="display: block; position: absolute; left: 0; width: 100%; top: 0; text-align: center;">Home</a>
         </header>
 
         <main>
@@ -27,7 +46,7 @@
                 <div class="loading-indicator"></div>
             </div>
 
-            <div :is="currentview" :store="store" class="container"></div>
+            <div :is="currentview" :store="store" :view="view" :params="viewParams" class="container"></div>
         </main>
 
         <footer class="site-footer">

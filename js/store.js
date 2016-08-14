@@ -1,10 +1,9 @@
 import { createStore } from 'redux';
-import page from 'page';
 
 const defaultState = {
     starting: true,
     user: undefined,
-    vaults: undefined,
+    vaults: {},
     secrets: undefined,
     selectedVaultId: null,
     passwords: {},
@@ -73,16 +72,70 @@ store.subscribe(() => {
     }
 });
 
-page('/vaults/:id', (ctx, next) => {
-    store.dispatch({ type: 'select-vault', id: ctx.params.id });
+const v = {
+    name: 'PUBLIC',
+    created: 'PUBLIC',
+    secrets: [{ created: 'PUBLIC', text: 'PRIVATE' }]
+};
+
+const vaultStore = createStore((state = { vaults: {}, passwords: {}, decryptedVaults: {} }, action) => {
+    switch (action.type) {
+        case 'load-vaults':
+            return Object.assign({}, state, { passwords: {}, vaults: action.vaults, encryptedVaults: {} });
+        case 'unlock-vault':
+
+
+
+            // const decryptedVault = decryptVault(state.vaults[action.id], password);
+
+
+            return Object.assign({}, state, {
+                passwords: Object.assign({}, state.passwords, { [action.id]: action.password }),
+                decryptedVaults: Object.assign({}, state.decryptedVaults, { [action.id]: state.vaults[action.id] })
+            });
+
+
+            const vault = state.vaults[action.id];
+            const pw = action.password;
+            const decrypt = x => decodeURIComponent(x);
+            const decryptedSecrets = vault.encryptedSecrets.map(decrypt);
+
+            const vaults = Object.assign(state.vaults);
+            vaults[action.id].password = action.password;
+            vaults[action.id].decryptedSecrets = vaults[action.id].encryptedSecrets.map(decrypt);
+
+            return Object.assign({}, state, { vaults });
+
+            // return Object.assign({}, state, { vaults: { [action.id]:  }});
+        // case 'lock-vault':
+        //     const vaults = Object.assign({}, state.vaults);
+        //     vaults[action.id].password = '';
+        //     vaults[action.id].decryptedSecrets = null;
+        //     return Object.assign({}, state);
+        default:
+            return state;
+    }
 });
 
-page('*', (ctx, next) => {
-    console.log(ctx);
-    store.dispatch({ type: 'select-vault', id: '' });
-});
 
-page({});
+// const s = createStore((state = {}, action) => {
+//     switch (action.type) {
+//         case 'x':
+//             return Object.assign({}, state);
+//         case 'e':
+//             throw new Error('BUMM');
+//         default:
+//             return state;
+//     }
+// });
+//
+// s.dispatch({ type: 'x' });
+//
+// try {
+//     s.dispatch({ type: 'e' });
+// } catch(e) {
+//     console.warn(e);
+// }
 
 //
 // var state = {

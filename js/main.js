@@ -68,42 +68,49 @@ Vue.component('vault-list', {
     }
 });
 
-Vue.component('ask-vault-info', {
-    replace: false,
-    template: '',
-
-    methods: {
-
-    }
-});
-
 Vue.component('vault-details', {
     replace: false,
     data() {
-        return { password: null, isPasswordCorrect: false }
+        return { state: null, vault: null, password: null, isPasswordCorrect: false }
     },
     props: ['vaultid', 'store'],
     template: require('../templates/vault-details.html'),
     created() {
-        const state = this.store.getState();
-        this.vaultid = state.selectedVaultId;
+        this.store.subscribe(() => {
+            console.log('sub');
+            this.state = this.store.getState();
+            this.vault = this.state.vaults[this.vaultid];
+        });
+
+        this.state = this.store.getState();
+        this.vault = this.state.vaults[this.vaultid];
+
+        // const state = this.store.getState();
+        // this.vaultid = state.selectedVaultId;
+    },
+    ready() {
+        console.log('ready');
+        if (this.state) {
+            this.vault = this.state.vaults[this.vaultid];
+        }
+        // const state = this.store.getState();
+        // this.vault = state.vaults[this.vaultid];
     },
     computed: {
-        vault() {
-            const state = this.store.getState();
-            const vault = state.vaults[this.vaultid];
-            return vault;
-        },
-
-        secrets() {
-            return [];
-
-            const state = this.store.getState();
-            // const vault = state.vaults[this.vaultid];
-            const secrets = state.secrets.filter(s => s.vaultid === this.vaultid);
-
-            return secrets;
-        }
+        // vault() {
+        //     console.log('comp vault');
+        //     return this.state.vaults[this.vaultid];
+        // },
+        //
+        // secrets() {
+        //     return [];
+        //
+        //     const state = this.store.getState();
+        //     // const vault = state.vaults[this.vaultid];
+        //     const secrets = state.secrets.filter(s => s.vaultid === this.vaultid);
+        //
+        //     return secrets;
+        // }
     },
 
     methods: {
@@ -154,12 +161,11 @@ Vue.component('prompt-vault-unlock', {
 Vue.component('app-main', {
     replace: false,
     template: require('../templates/app-main.html'),
-    props: ['store'],
+    props: ['store', 'view', 'params'],
     data() {
         return {
             vaults: {},
             vaultsLoading: false,
-            view: 'vault-list',
             history: [],
             store,
             currentVaultId: '',
@@ -291,7 +297,9 @@ const model = new Vue({
 
         starting: true,
         currentview: '',
-        store
+        store,
+        view: '',
+        viewParams: {}
     },
 
     ready() {
@@ -330,88 +338,44 @@ const model = new Vue({
     },
 
     methods: {
-        createSecret: () => {
-            console.log('create secret');
-
-            const dbref = firebase.database().ref(`user-passwords/${model.user.uid}`);
-            dbref.on('value', x => {
-                console.log(x.val());
-            });
-
-            dbref.push(encrypt(JSON.stringify({ asdf: 'qwe_' + Math.random() }), SALT, PASS));
+        openView(view, params) {
+            this.view = view;
+            this.viewParams = params;
         },
 
-        logout() { firebase.auth().signOut(); }
-
-        // sync: () => {
-        //     const dbref = firebase.database().ref(`user-passwords/${model.user.uid}`);
+        // createSecret: () => {
+        //     console.log('create secret');
         //
-        //     dbref.once('value', snap => {
-        //         snap.forEach(x => {
-        //             const encryptedVal = x.val();
-        //             const realVal = decrypt(encryptedVal, SALT, PASS);
-        //             const id = x.key;
-        //             const obj = JSON.parse(realVal);
-        //             console.log(id, encryptedVal, realVal, obj);
-        //         });
+        //     const dbref = firebase.database().ref(`user-passwords/${model.user.uid}`);
+        //     dbref.on('value', x => {
+        //         console.log(x.val());
         //     });
-        // }
+        //
+        //     dbref.push(encrypt(JSON.stringify({ asdf: 'qwe_' + Math.random() }), SALT, PASS));
+        // },
+
+        logout() { firebase.auth().signOut(); }
     }
 });
 
-// store.subscribe(() => {
-//     const state = store.getState();
-//     model.user = state.user;
-//     model.vaults = state.vaults;
-// });
+page('/', (ctx, next) => {
+    model.openView('vault-list');
+});
 
+page('/vaults', (ctx, next) => {
+    model.openView('vault-list');
+});
 
+page('/vaults/:id', (ctx, next) => {
+    model.openView('vault-details', { vaultid: ctx.params.id });
+});
 
-// window.jwtdecode = require('jwt-decode');
+page('*', (ctx, next) => {
+    console.log('unknown page');
+});
 
-// firebase.auth().signInWithCredential(firebase.auth.GithubAuthProvider.credential('a5684313144fa64eb3e3aeac9e6ad077b94f3588'))
+page({});
 
-// firebase.initializeApp({
-//     apiKey: "AIzaSyAvdrVPo0WJMIA1qkMVz4_Ul_vDDPmJCGc",
-//     authDomain: "passwords-b6edd.firebaseapp.com",
-//     databaseURL: "https://passwords-b6edd.firebaseio.com",
-//     storageBucket: "passwords-b6edd.appspot.com",
-// });
-
-
-// firebase.database().ref(`users/STxWl9QwIwWIwVpm9Z1fDmmdtju1`).once('value', s => {
-//     console.log(s.val());
-// });
-
-
-//
-// const rf = firebase.database().ref('user-passwords/STxWl9QwIwWIwVpm9Z1fDmmdtju1');
-// rf.once('value', snap => {
-//     console.log(snap.val());
-// });
-
-// firebase.auth().onAuthStateChanged(model.setUser);
-// firebase.auth().onAuthStateChanged(user => store.dispatch({ type: 'auth-state-changed', user }));
-// firebase.auth().onAuthStateChanged(user => console.log(user));
-// firebase.auth().onAuthStateChanged(user => (user && console.log(user.uid)) || 'null user');
-// firebase.auth().onAuthStateChanged(x => console.log('auth state changed', x));
-
-
-// const vaults = [
-//     {
-//         title: 'title',
-//         iv: 'abc123',
-//         salt: 'salt',
-//         secrets: [
-//             'sdfsdfsdf',
-//             'wer23332efsd',
-//             '...'
-//         ]
-//     }
-// ];
-
-
-//
 // const sjcl = require('sjcl');
 //
 // var saltBits = sjcl.random.randomWords(8);

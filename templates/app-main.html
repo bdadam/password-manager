@@ -1,22 +1,22 @@
 <prompt-vault-create v-if="prompt === 'vault-create'" @cancel="closePrompt" @vaultcreated="vaultcreated"></prompt-vault-create>
 <prompt-vault-passwordchange v-if="prompt === 'vault-passwordchange'"></prompt-vault-passwordchange>
-
 <prompt-vault-unlock v-if="prompt === 'vault-unlock'" @cancel="closePrompt" @vaultunlocked="vaultunlocked"></prompt-vault-unlock>
 
-<ul class="vault-list">
+
+<ul v-if="view === 'vault-list'" class="vault-list">
     <li v-for="(id, vault) in vaults" class="vault-list-item">
         <div class="status">
             <svg class="icXon" viewBox="0 0 32 32" style="height: 32px; width: 22px;"><use xlink:href="#icon-lock"></use></svg>
             locked
         </div>
 
-        <a class="main" href="/vaults/{{ id }}" @click.prevent="openVault(id)">
+        <a class="main" href="/vaults/{{ id }}" @Xclick.prevent="openVault(id)">
             <h3>{{ vault.name }}</h3>
             <p style="font-size: 0.875rem; color: #999;">{{ id }}</p>
         </a>
 
         <div class="actions">
-            <a class="btn-primary" href="/vaults/{{ id }}" @click.prevent="openVault(id)">Open vault</a>
+            <a class="btn-primary" href="/vaults/{{ id }}" @Xclick.prevent="openVault(id)">Open vault</a>
             <button class="btn" @click="removeVault(id)">Remove</button>
         </div>
     </li>
@@ -34,31 +34,10 @@
     </form>
 </modal-window>
 
-
-<!-- <table style="max-width: 70%; margin: 0 auto;">
-    <tr v-for="(id, vault) in vaults">
-        <td style="text-align: center; padding: 0;">
-            <svg class="icXon" viewBox="0 0 32 32" style="height: 32px; width: 22px;"><use xlink:href="#icon-lock"></use></svg>
-        </td>
-        <td>
-            <p style="font-weight: bold;">{{ vault.name }}</p>
-            <p style="font-size: 0.875; color: #999;">{{ id }}</p>
-        </td>
-        <td>
-            <a class="btn-primary" href="/vaults/{{ id }}">Open vault</a>
-            <button class="btn" @click="removeVault(id)">Remove</button>
-        </td>
-    </tr>
-    <tr>
-        <td colspan="3" style="text-align: center;">
-            <button @click="openPrompt('vault-create')">create vault</button>
-        </td>
-    </tr>
-</table> -->
-
 <!-- <vault-list :store="store"></vault-list> -->
-<!-- <vault-details :store="store" :vaultid="currentVaultId"></vault-details>
-<vault-secret-details :store="store" :secretid="currentSecretId"></vault-secret-details> -->
+<vault-details v-if="view === 'vault-details'" :store="store" :vaultid="params.vaultid"></vault-details>
+
+<!-- <vault-secret-details :store="store" :secretid="currentSecretId"></vault-secret-details> -->
 
 <div style="display: none;">
     <svg id="icon-lock" xmlns="http://www.w3.org/2000/svg" xwidth="32" xheight="32" viewBox="0 0 22 32"><path d="M18.5 14H18V8c0-3.308-2.692-6-6-6H8C4.692 2 2 4.692 2 8v6h-.5c-.825 0-1.5.675-1.5 1.5v15c0 .825.675 1.5 1.5 1.5h17c.825 0 1.5-.675 1.5-1.5v-15c0-.825-.675-1.5-1.5-1.5zM6 8c0-1.103.897-2 2-2h4c1.103 0 2 .897 2 2v6H6V8z"/></svg>
