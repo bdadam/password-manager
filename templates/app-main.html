@@ -20,6 +20,9 @@
             <button class="btn" @click="removeVault(id)">Remove</button>
         </div>
     </li>
+    <li>
+        <button @click="openPrompt('vault-create')">Create new vault</button>
+    </li>
 </ul>
 
 <modal-window v-if="prompt === 'vault-unlock-password'">

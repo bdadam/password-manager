@@ -108,7 +108,7 @@
   max-width: 400px;
   background-color: #fff;
   transform: translate(-100%);
-  transition: transform .25s;
+  transition: transform .25s ease-out;
   z-index: 2;
 
   display: flex;
@@ -136,7 +136,7 @@
 
 .menu-backdrop {
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.25s ease-out;
 }
 
 .btn-menu-trigger.open + .menu {

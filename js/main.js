@@ -7,7 +7,7 @@ const page = require('page');
 // import { encrypt, decrypt } from './crypto.js';
 // import Vault from './vault.js';
 
-
+// import Vuex from 'vuex';
 import { firebase } from './firebase';
 import store from './store';
 import once from 'lodash/once';
@@ -375,6 +375,10 @@ page('*', (ctx, next) => {
 });
 
 page({});
+
+import * as vaults from './vaults.js';
+
+// console.log(vaults.checkPassword);
 
 // const sjcl = require('sjcl');
 //
